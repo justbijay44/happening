@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block title %}Home - Happening {% endblock %}
+
+{% block content %}
+    <section class="bg-indigo-600 text-white py-20">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 class="text-4xl md:text-5xl font-bold mb-4">Discover College Events</h1>
+            <p class="text-lg md:text-xl mb-8">Join, volunteer, or propose exciting events!</p>
+            <a href="{% url 'account_signup' %}" class="bg-white text-indigo-600 px-6 py-3 rounded-md font-semibold hover:bg-gray-100">Get Started</a>
+        </div>
+    </section>
+    <section class="py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Upcoming Events</h2>
+            <p class="text-gray-600 text-center">Events coming soon!</p>
+        </div>
+    </section>
+    <section class="bg-gray-200 py-16">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Recent Highlights</h2>
+            <p class="text-gray-600 text-center">Highlights coming soon!</p>
+        </div>
+    </section>
+{% endblock %}

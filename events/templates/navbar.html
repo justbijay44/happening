@@ -1,0 +1,45 @@
+<nav class="absolute top-0 w-full z-20 text-white pt-10 px-6">
+    <div class="container mx-auto flex justify-between items-center">
+        <div class="text-2xl font-bold">Happening</div>
+        <div class="hidden md:flex space-x-12">
+            <a href="" class="hover:text-purple-300">HOME</a>
+            <a href="" class="hover:text-purple-300">SCHEDULE</a>
+            <a href="" class="hover:text-purple-300">BE PART OF</a>
+            <a href="" class="hover:text-purple-300">ABOUT</a>
+        </div>
+        <div class="md:hidden">
+            <button id="menu-btn" class="focus:outline-none">
+                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7">
+                    </path>
+                </svg>
+            </button>
+        </div>
+        {% if user.is_authenticated %}
+        <div>
+            <a href="{% url 'account_logout' %}" class="bg-[#2A07F9] px-4 py-2 rounded text-white font-medium hover:bg-blue-700 transition">LOG OUT</a>
+        </div>
+        {% else %}
+        <div class="space-x-4">
+            <a href="{% url 'account_signup' %}" class="bg-[#2A07F9] px-4 py-2 rounded text-white font-medium hover:bg-[#3C1DF9] transition">CREATE
+                ACCOUNT</a>
+            <a href="{% url 'account_login' %}"
+                class="bg-transparent border-2 border-white px-4 py-2 rounded text-white font-medium hover:bg-white hover:text-purple-900 transition">SIGN
+                IN</a>
+        </div>
+        {% endif %}
+
+    </div>
+    <div id="menu" class="hidden md:hidden bg-purple-800 p-4">
+        <a href="" class="block py-2 hover:text-purple-300">HOME</a>
+        <a href="" class="block py-2 hover:text-purple-300">SCHEDULE</a>
+        <a href="" class="block py-2 hover:text-purple-300">BE PART OF</a>
+        <a href="" class="block py-2 hover:text-purple-300">ABOUT</a>
+    </div>
+</nav>
+
+<!-- <script>
+    document.getElementById('menu-btn').addEventListener('click', function() {
+        document.getElementById('menu').classList.toggle('hidden');
+    });
+</script> -->

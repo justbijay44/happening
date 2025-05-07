@@ -1,0 +1,30 @@
+{% load static tailwind_tags %}
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css" rel="stylesheet">
+
+	{% tailwind_css %}
+    <style>
+        body {
+            font-family: 'Syne', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans">
+    {% include 'navbar.html' %}
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+    <footer class="bg-[#2A07F9] text-white py-8">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <p>© 2025 Happening. All rights reserved.</p>
+        </div>
+    </footer>
+</body>
+</html>

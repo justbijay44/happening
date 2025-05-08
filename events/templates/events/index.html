@@ -7,11 +7,10 @@
     <!-- Landing Page -->
     <section
         class="relative min-h-[65vh] flex items-center justify-center text-center p-6 bg-gradient-to-b from-[#21086E] to-[#400FD4]">
-
-        <div class="absolute inset-0 bg-cover bg-center opacity-20"
+        <div class="absolute inset-0 bg-cover bg-center opacity-35"
             style="background-image: url({% static 'images/landing_bg.jpg' %});"></div>
         <div class="absolute inset-0"
-            style="background: radial-gradient(circle, #4a15ec 0%, #140150 100%); opacity: 0.45;"></div>
+            style="background: radial-gradient(circle, #4a15ec 0%, #140150 100%); opacity: 0.6;"></div>
         <!-- Landing Page Content -->
         <div class="relative z-10 text-center max-w-6xl mx-auto">
             <div class="mx-auto max-w-7xl">
@@ -41,7 +40,8 @@
         <!-- Floating Form -->
         <div class="absolute bottom-0 translate-y-1/2 z-20 w-full max-w-7xl mx-auto px-4">
             <form class="bg-[#2A07F9] p-8 rounded-xl shadow-2xl border border-white/30">
-                <div class="flex flex-col md:flex-row justify-between text-[#1D275F] items-start space-y-6 md:space-y-0 md:space-x-6">
+                <div
+                    class="flex flex-col md:flex-row justify-between text-[#1D275F] items-start space-y-6 md:space-y-0 md:space-x-6">
                     <div class="w-full md:w-auto flex flex-col items-start">
                         <label class="block text-white text-lg font-medium mb-2">Looking for</label>
                         <select class="p-3 rounded-lg bg-white w-70 text-left pr-16 focus:outline-none">
@@ -71,77 +71,17 @@
     </section>
 </main>
 
-<section class="py-16 bg-white">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="flex justify-between items-center mt-15 mb-8">
-            <h2 class="text-3xl text-[#2A07F9] font-bold hidden md:block">Upcoming Events</h2>
-            <!-- Filter Based -->
-            <div class="flex space-x-6 text-[#1D275F]">
-                <select class="p-3 rounded-xl bg-[#F2F4FF] border border-gray-300 focus:outline-none w-36">
-                    <option>Event Type</option>
-                </select>
-                <select class="p-3 rounded-xl bg-[#F2F4FF] border border-gray-300 focus:outline-none w-36">
-                    <option>Any Category</option>
-                </select>
-                <select class="p-3 rounded-xl bg-[#F2F4FF] border border-gray-300 focus:outline-none w-36">
-                    <option>Any Category</option>
-                </select>
-            </div>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <!-- Event Card 1 -->
-            <a href="#" class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <img src="{% static 'images/sports.jpg' %}" alt="Event 3" class="w-full h-56 object-cover">
-                <div class="p-4">
-                    <div class="flex space-x-2 mb-2">
-                        <div class="bg-[#2A07F9] text-white px-3 py-1 rounded-lg text-sm font-medium">May 20, 2025</div>
-                        <div class="bg-[#F2F4FF] text-[#2A07F9] px-3 py-1 rounded-lg text-sm font-medium">
-                            <i class="fas fa-map-marker-alt px-1"></i> Acem Hall</div>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Sports Week 2081</h3>
-                    <p class="text-gray-600 mb-4">A week full of thrilling and entertaining sports.</p>
-                </div>
-            </a>
-            <!-- Event Card 2 -->
-            <a href="#" class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <img src="{% static 'images/welcome.jpg' %}" alt="Event 3" class="w-full h-56 object-cover">
-                <div class="p-4">
-                    <div class="flex space-x-2 mb-2">
-                        <div class="bg-[#2A07F9] text-white px-3 py-1 rounded-lg text-sm font-medium">May 25</div>
-                        <div class="bg-[#F2F4FF] text-[#2A07F9] px-3 py-1 rounded-lg text-sm font-medium">
-                            <i class="fas fa-map-marker-alt px-1"></i> Anupam Foodland, Kathmandu</div>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Welcome and Farewell Program 2081</h3>
-                    <p class="text-gray-600 mb-4">A Memory that would be with the student both for who are coming and going.</p>
-                </div>
-            </a>
-            <!-- Event Card 3 -->
-            <a href="#" class="bg-white rounded-xl shadow-lg overflow-hidden">
-                <img src="{% static 'images/kuma.jpeg' %}" alt="Event 3" class="w-full h-56 object-cover">
-                <div class="p-4">
-                    <div class="flex space-x-2 mb-2">
-                        <div class="bg-[#2A07F9] text-white px-3 py-1 rounded-lg text-sm font-medium">Soon</div>
-                        <div class="bg-[#F2F4FF] text-[#2A07F9] px-3 py-1 rounded-lg text-sm font-medium">
-                            <i class="fas fa-map-marker-alt px-1"></i> Undecided</div>
-                    </div>
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">Music Concert</h3>
-                    <p class="text-gray-600 mb-4">Get ready for an unforgettable night of live music!</p>
-                </div>
-            </a>
-        </div>
-        <div class="text-center mt-8">
-            <button class="px-8 py-2 rounded-full border-2 border-[#2A07F9] text-[#2A07F9] bg-transparent hover:bg-[#2A07F9] hover:text-white transition">
-                Load More
-            </button>
-        </div>
-        
-    </div>
-</section>
+<!-- Upcoming Events -->
+{% include 'events/upcoming_event.html' %}
 
-<section class="bg-gray-200 py-16">
+<section class="bg-[#F2F4FF] py-16">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="text-3xl font-bold text-gray-800 mb-8 text-center">Recent Highlights</h2>
         <p class="text-gray-600 text-center">Highlights coming soon!</p>
     </div>
 </section>
+
+<!-- Purpose Form -->
+{% include 'events/event_proposed.html' %}
+
 {% endblock %}

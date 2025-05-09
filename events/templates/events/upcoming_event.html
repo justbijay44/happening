@@ -18,14 +18,14 @@
         {% if upcoming_events %}
         <div class="grid grid-cols-1 md:grid-cols-3 space-x-6 space-y-6">
             {% for events in upcoming_events %}
-            <a href="#" class="bg-white rounded-xl shadow-lg overflow-hidden">
+            <a href="{% url 'event_detail' events.id %}" class="bg-white rounded-xl shadow-lg overflow-hidden">
                 <img src="{{ events.image.url }}" alt="{{ events.title }}" class="w-full h-56 object-cover">
                 <div class="p-4">
                     <div class="flex space-x-2 mb-2">
                         <div class="bg-[#2A07F9] text-white px-3 py-1 rounded-lg text-sm font-medium">{{ events.date }}
                         </div>
                         <div class="bg-[#F2F4FF] text-[#2A07F9] px-3 py-1 rounded-lg text-sm font-medium">
-                            <i class="fas fa-map-marker-alt px-1"></i>{{ events.venue }}
+                            <i class="fas fa-map-marker-alt px-1"></i>{{ events.location }} ({{ events.venue.name }})
                         </div>
                     </div>
                     <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ events.title }}</h3>

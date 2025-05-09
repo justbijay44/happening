@@ -38,3 +38,14 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+class EventView(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='views')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='event_views')
+    viewed_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('event', 'user')
+
+    def __str__(self):
+        return f"{self.user.username} viewed {self.event.title}"

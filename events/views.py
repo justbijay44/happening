@@ -1,40 +1,61 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
-from .models import Event, EventView
+from django.contrib import messages
+from .models import Event, EventView, EventParticipation, Volunteer
 from .forms import EventProposalForm
+import json
 
 def home(request):
     upcoming_events = Event.objects.filter(is_approved=True, date__gte=timezone.now()).order_by('date')
     recommended_events = None
 
     if request.user.is_authenticated:
-        proposed_events = Event.objects.filter(proposed_by=request.user)
-        viewed_events = Event.objects.filter(views__user=request.user)
+        try:
+            with open('recommendations.json', 'r') as f:
+                recommendations = json.load(f)
+            recommended_ids = recommendations.get(str(request.user.id), [])
+            if recommended_ids:
+                recommended_events = Event.objects.filter(
+                    id__in=recommended_ids,
+                    is_approved=True,
+                    date__gte=timezone.now()
+                ).order_by('date')[:3]
 
-        event_types = set()
-        if proposed_events.exists():
-            event_types.update(proposed_events.values_list('event_type', flat=True))
-        if viewed_events.exists():
-            event_types.update(viewed_events.values_list('event_type', flat=True))
+            # If no recommendations or empty, compute on the fly based on viewed events
+            if not recommended_events or not recommended_events.exists():
+                viewed_events = Event.objects.filter(views__user=request.user)
+                if viewed_events.exists():
+                    event_types = set(viewed_events.values_list('event_type', flat=True))
+                    recommended_events = Event.objects.filter(
+                        event_type__in=event_types,
+                        is_approved=True,
+                        date__gte=timezone.now()
+                    ).exclude(proposed_by=request.user).order_by('date')[:3]
 
-        if event_types:
-            recommended_events = Event.objects.filter(
-                is_approved=True,
-                date__gte=timezone.now(),
-                event_type__in=event_types
-            ).exclude(id__in=proposed_events.values('id')).order_by('date')[:3]
-        else:
-            recommended_events = Event.objects.filter(
-                is_approved=True,
-                date__gte=timezone.now(),
-                is_highlight=True
-            ).order_by('date')[:3]
+            # Final fallback to highlighted events
+            if not recommended_events or not recommended_events.exists():
+                recommended_events = Event.objects.filter(
+                    is_approved=True,
+                    date__gte=timezone.now(),
+                    is_highlight=True
+                ).order_by('date')[:3]
 
-        if not recommended_events.exists():
-            recommended_events = Event.objects.filter(
-                is_approved=True,
-                date__gte=timezone.now()
-            ).order_by('-date')[:3]
+        except (FileNotFoundError, json.JSONDecodeError):
+            # Fallback to event_type matching if JSON fails
+            viewed_events = Event.objects.filter(views__user=request.user)
+            if viewed_events.exists():
+                event_types = set(viewed_events.values_list('event_type', flat=True))
+                recommended_events = Event.objects.filter(
+                    event_type__in=event_types,
+                    is_approved=True,
+                    date__gte=timezone.now()
+                ).exclude(proposed_by=request.user).order_by('date')[:3]
+            if not recommended_events or not recommended_events.exists():
+                recommended_events = Event.objects.filter(
+                    is_approved=True,
+                    date__gte=timezone.now(),
+                    is_highlight=True
+                ).order_by('date')[:3]
 
     # Form handling
     if request.method == 'POST':
@@ -59,6 +80,116 @@ def home(request):
 
 def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id, is_approved=True)
+    going_count = EventParticipation.objects.filter(event=event, status='going').count()
+    
+    user_is_going = False
+    user_volunteer = None
+
     if request.user.is_authenticated:
         EventView.objects.get_or_create(event=event, user=request.user)
-    return render(request, 'events/event_detail.html', {'event': event})
+
+        try:
+            participation = EventParticipation.objects.get(event=event, user=request.user)
+            user_is_going = participation.status == 'going'
+        except EventParticipation.DoesNotExist:
+            user_is_going = False
+    
+        user_volunteer = Volunteer.objects.filter(event=event, user=request.user).first()
+
+    context = {
+        'event': event,
+        'going_count': going_count,
+        'user_is_going': user_is_going,
+        'user_volunteer': user_volunteer,
+    }
+    return render(request, 'events/event_detail.html', context)
+
+def mark_going(request, event_id):
+    if not request.user.is_authenticated:
+        return redirect('account_login')
+    
+    event = get_object_or_404(Event, id=event_id, is_approved=True)
+    participation, created = EventParticipation.objects.get_or_create(
+        event=event,
+        user=request.user
+    )
+    if created:
+        participation.status='going'
+        participation.save()
+        messages.success(request, f"You are now marked as going to {event.title}!")
+    else:
+        #Toggle status
+        if participation.status == 'going':
+            participation.status = 'not_going'
+            participation.save()
+            messages.success(request, f"You are now marked as not going to {event.title}!")
+        else:
+            participation.status = 'going'
+            participation.save()
+            messages.success(request, f"You are now marked as going to {event.title}!")
+
+        return redirect('event_detail', event_id=event_id)
+
+    if not created and participation.status == 'not_going':
+        participation.status = 'going'
+        participation.save()
+        messages.success(request, f"You are now marked as going to {event.title}!")
+    elif participation.status == 'going':
+        messages.info(request, f"You are already marked as going to {event.title}.")
+    else:
+        messages.success(request, f"You are now going to {event.title}!")
+
+    return redirect('event_detail', event_id=event_id)
+
+def volunteer_for_event(request, event_id):
+    if not request.user.is_authenticated:
+        return redirect('account_login')
+    
+    event = get_object_or_404(Event, id=event_id, is_approved=True)
+
+    if request.method == 'POST':
+        role = request.POST.get('role')
+        if role:
+            volunteer, created = Volunteer.objects.get_or_create(
+                event=event,
+                user=request.user,
+                defaults={'role': role, 'is_approved': False}
+            )
+
+            if created:
+                volunteer.role = role
+                volunteer.save()
+                messages.success(request, f"Your volunteer role has been updated for {event.title}!")
+            else:
+                messages.success(request, f"Thank you for volunteering for {event.title}! Your request is pending approval.")
+
+            return redirect('event_detail', event_id=event_id)
+        else:
+            messages.error(request, "Please select a role.")
+    
+    exisiting_volunteer = Volunteer.objects.filter(event=event, user=request.user).first()
+    context = {
+        'event': event,
+        'existing_volunteer': exisiting_volunteer,
+    }
+
+    return render(request, 'events/volunteer_form.html', context)
+
+def my_events(request):
+    if not request.user.is_authenticated:
+        return redirect('account_login')
+    
+    participations = EventParticipation.objects.filter(
+        user=request.user,
+        status='going',
+    ).select_related('event')
+
+    volunteering = Volunteer.objects.filter(
+        user=request.user,
+    ).select_related('event')
+
+    context = {
+        'participations': participations,
+        'volunteering': volunteering,
+    }
+    return render(request, 'events/my_events.html', context)

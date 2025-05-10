@@ -1,0 +1,67 @@
+<!-- templates/events/my_events.html -->
+{% extends 'layout.html' %}
+
+{% block content %}
+<section class="py-16 bg-gray-100">
+    <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <h1 class="text-3xl font-bold text-purple-600 mb-8">My Events</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Events I'm Attending -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Events I'm Attending</h2>
+                
+                {% if participations %}
+                <div class="space-y-4">
+                    {% for participation in participations %}
+                    <div class="border-b border-gray-200 pb-4 last:border-b-0">
+                        <h3 class="text-xl font-semibold text-purple-600">
+                            <a href="{% url 'event_detail' participation.event.id %}">{{ participation.event.title }}</a>
+                        </h3>
+                        <p class="text-gray-600">{{ participation.event.date }}</p>
+                        <p class="text-gray-700 mt-2">{{ participation.event.description|truncatewords:30 }}</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-600">You're not attending any events yet.</p>
+                {% endif %}
+            </div>
+            
+            <!-- Events I'm Volunteering For -->
+            <div class="bg-white rounded-lg shadow p-6">
+                <h2 class="text-2xl font-bold text-gray-800 mb-4">Events I'm Volunteering For</h2>
+                
+                {% if volunteering %}
+                <div class="space-y-4">
+                    {% for volunteer in volunteering %}
+                    <div class="border-b border-gray-200 pb-4 last:border-b-0">
+                        <h3 class="text-xl font-semibold text-purple-600">
+                            <a href="{% url 'event_detail' volunteer.event.id %}">{{ volunteer.event.title }}</a>
+                        </h3>
+                        <p class="text-gray-600">{{ volunteer.event.date }}</p>
+                        <div class="flex space-x-2 mt-1">
+                            <span class="bg-blue-100 text-blue-800 text-xs font-semibold px-2.5 py-0.5 rounded">{{ volunteer.get_role_display }}</span>
+                            {% if volunteer.is_approved %}
+                            <span class="bg-green-100 text-green-800 text-xs font-semibold px-2.5 py-0.5 rounded">Approved</span>
+                            {% else %}
+                            <span class="bg-yellow-100 text-yellow-800 text-xs font-semibold px-2.5 py-0.5 rounded">Pending</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-gray-600">You're not volunteering for any events yet.</p>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mt-8 text-center">
+            <a href="{% url 'home' %}" class="inline-block bg-purple-600 hover:bg-purple-700 text-white font-semibold py-2 px-6 rounded-lg transition">
+                Explore More Events
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}

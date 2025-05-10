@@ -14,9 +14,12 @@
             font-family: 'Syne', sans-serif;
         }
     </style>
+    <title>{% block title %}Happening{% endblock %}</title>
 </head>
 <body class="bg-gray-100 font-sans">
+    {% block navbar %}
     {% include 'navbar.html' %}
+    {% endblock %}
     <main>
         {% block content %}
         {% endblock %}

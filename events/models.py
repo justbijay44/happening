@@ -49,3 +49,41 @@ class EventView(models.Model):
 
     def __str__(self):
         return f"{self.user.username} viewed {self.event.title}"
+
+class EventParticipation(models.Model):
+    STATUS = [
+        ('going', 'Going'),
+        ('interested', 'Interested'),
+        ('not_going', 'Not Going'),
+    ]
+
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='participations')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='participants')
+    status = models.CharField(max_length=20, choices= STATUS, default='going')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('event', 'user')
+
+    def __str__(self):
+        return f"{self.user.username} is {self.status} to {self.event.title}"
+
+class Volunteer(models.Model):
+    Event_role = [
+        ('coordinator', 'Event Coordinator'),
+        ('setup', 'Setup Crew'),
+        ('registration', 'Registration'),
+        ('technical', 'Technical Support'),
+        ('other', 'Other')
+    ]
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='volunteers')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='volunteering')
+    role = models.CharField(max_length=20, choices=Event_role, blank=True, null=True)
+    signup_date = models.DateTimeField(auto_now_add=True)
+    is_approved = models.BooleanField(default=False)
+
+    class Meta:
+        unique_together = ('event', 'user')
+    
+    def __str__(self):
+        return f"{self.user.username} is volunteering for {self.event.title} as {self.role} (Approved: {self.is_approved})"

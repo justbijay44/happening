@@ -1,15 +1,87 @@
-<section class="py-16 bg-gray-100">
-    <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <h2 class="text-3xl font-bold text-purple-600 mb-4">{{ event.title }}</h2>
-        <img src="{{ event.image.url }}" alt="{{ event.title }}" class="w-full h-64 object-cover rounded-lg mb-4">
-        <p class="text-gray-600 mb-4">{{ event.description }}</p>
-        <div class="flex space-x-4 mb-4">
-            <span class="bg-blue-600 text-white px-3 py-1 rounded-lg">{{ event.date }}</span>
-            <span class="bg-gray-200 text-gray-800 px-3 py-1 rounded-lg">{{ event.location }} ({{ event.venue.name }})</span>
+{% extends 'layout.html' %}
+{% load static %}
+{% block title %}{{ event.title }} - Happening{% endblock %}
+
+{% block navbar %}
+<!-- Empty to avoid -->
+{% endblock %}
+
+{% block content %}
+<section class="relative min-h-[45vh] p-6 bg-gradient-to-b from-[#21086E] to-[#400FD4]">
+    <!-- Background Image with Overlay -->
+    <div class="absolute inset-0 bg-cover bg-center opacity-35"
+        style="background-image: url('{% if event.image %}{{ event.image.url }}{% else %}{% static 'images/landing_bg.jpg' %}{% endif %}');">
+    </div>
+    <div class="absolute inset-0" style="background: radial-gradient(circle, #4a15ec 0%, #140150 100%); opacity: 0.6;">
+    </div>
+
+    <!-- Centered Event Image -->
+    {% if event.image %}
+    <div
+        class="absolute top-35 left-20 z-10 rounded-xl shadow-2xl overflow-hidden w-64 h-48 md:w-130 md:h-80 border-2 border-white/70">
+        <img src="{{ event.image.url }}" alt="{{ event.title }}" class="w-full h-full object-cover">
+    </div>
+    {% endif %}
+
+    <!-- Centered Bottom Bar -->
+    <div class="absolute bottom-0 left-0 right-0 bg-white bg-opacity-75 py-4 px-6 flex items-center">
+        <div class="w-full flex justify-end space-x-6">
+            <span
+                class="bg-[#F2F4FF] text-[#1D275F] text-lg font-medium py-2 px-4 rounded-full border-2 border-[#1D275F]">{{going_count}}
+                people decided to go</span>
+            {% if user.is_authenticated %}
+            <form action="{% url 'mark_going' event.id %}" method="post" class="inline-block">
+                {% csrf_token %}
+                <button type="submit"
+                    class="bg-[#2A07F9] hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full text-lg">
+                    {% if user_is_going %}I'm Going{% else %}Mark as Going{% endif %}
+                </button>
+            </form>
+            <form action="{% url 'volunteer_for_event' event.id %}" method="post" class="inline-block">
+                {% csrf_token %}
+                <button type="submit"
+                    class="bg-[#F10034] hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full text-lg">
+                    <i class="fas fa-heart mr-2"></i>
+                    {% if user_volunteer %}Update Volunteer Role{% else %}Volunteer{% endif %}
+                </button>
+            </form>
+            {% else %}
+            <a href="{% url 'account_login' %}"
+                class="bg-[#2A07F9] hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full text-lg">
+                Login to Mark Going
+            </a>
+            {% endif %}
         </div>
-        <p class="text-gray-600">Event Type: {{ event.event_type|capfirst }}</p>
-        {% if event.category %}
-        <p class="text-gray-600">Category: {{ event.category }}</p>
-        {% endif %}
     </div>
 </section>
+
+<div class="mt-20 p-6 ">
+    <!-- Title and Description -->
+    <h2 class="text-3xl font-bold text-[#1D275F] mb-6">{{ event.title }}</h2>
+    <p class="text-[#1D275F] text-lg leading-relaxed mb-8">{{ event.description }}</p>
+
+    <!-- Event Details -->
+    <div class="flex flex-wrap gap-4 mb-8 p-4 rounded-lg">
+        <span class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">{{ event.date|date:"F d, Y, g:i A" }}</span>
+        <span class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium">
+            <i class="fas fa-map-marker-alt mr-2"></i>{{ event.location }} ({{ event.venue.name }})
+        </span>
+        <span class="bg-purple-100 text-purple-700 px-4 py-2 rounded-lg text-sm font-medium">
+            Event Type: {{ event.event_type|capfirst }}
+        </span>
+        {% if event.category %}
+        <span class="bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium">
+            Category: {{ event.category }}
+        </span>
+        {% endif %}
+    </div>
+
+    <!-- Back to Home Button -->
+    <div class="text-right">
+        <a href="{% url 'home' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-300">
+            Back to Home
+        </a>
+    </div>
+</div>
+
+{% endblock %}

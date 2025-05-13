@@ -41,6 +41,10 @@ class Event(models.Model):
 
     def is_upcoming(self):
         return self.date >= timezone.now()
+    
+    def is_past(self):
+        reference_time = self.end_date if self.end_date else self.date
+        return reference_time < timezone.now()
 
     def __str__(self):
         return self.title
@@ -118,4 +122,27 @@ class VenueBooking(models.Model):
         unique_together = ('venue', 'start_time', 'end_time')
         indexes = [models.Index(fields=['venue', 'start_time', 'end_time'])]
     
+class Rating(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='ratings')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='ratings')
+    score = models.IntegerField(choices=[(i, str(i)) for i in range(1,6)], help_text="Rating from 1 to 5")
+    created_at = models.DateTimeField(auto_now_add=True)
 
+    def clean(self):
+        # Check if event has ended
+        end_time = self.event.end_date or self.event.date
+        if end_time >= timezone.now():
+            raise ValidationError("Ratings are only allowed for events that have ended.")
+        # Check if user participated (status='going')
+        if not EventParticipation.objects.filter(
+            event=self.event,
+            user=self.user,
+            status='going'
+        ).exists():
+            raise ValidationError("Only users who participated in the event can rate it.")
+
+    class Meta:
+        unique_together=('event', 'user')
+
+    def __str__(self):
+        return f"{self.user.username} rated {self.event.title} {self.score}/5"

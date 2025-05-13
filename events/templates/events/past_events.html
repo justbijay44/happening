@@ -1,0 +1,50 @@
+<section class="bg-[#F2F4FF] py-16">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center mb-8">
+            <h2 class="text-3xl text-[#2A07F9] font-bold hidden md:block">Recent Events</h2>
+            <!-- Filter Based -->
+            <div class="flex space-x-6 text-[#1D275F]">
+                <select class="p-3 rounded-xl bg-[#F2F4FF] border border-gray-300 focus:outline-none w-36">
+                    <option>Event Type</option>
+                </select>
+                <select class="p-3 rounded-xl bg-[#F2F4FF] border border-gray-300 focus:outline-none w-36">
+                    <option>Any Category</option>
+                </select>
+                <select class="p-3 rounded-xl bg-[#F2F4FF] border border-gray-300 focus:outline-none w-36">
+                    <option>Any Category</option>
+                </select>
+            </div>
+        </div>
+        {% if past_events %}
+        <div class="grid grid-cols-1 md:grid-cols-3 space-x-6 space-y-6">
+            {% for events in past_events %}
+            <a href="{% url 'event_detail' events.id %}" class="bg-white rounded-xl shadow-lg overflow-hidden">
+                <img src="{{ events.image.url }}" alt="{{ events.title }}" class="w-full h-56 object-cover">
+                <div class="p-4">
+                    <div class="flex space-x-2 mb-2">
+                        <div class="bg-[#2A07F9] text-white px-3 py-1 rounded-lg text-sm font-medium">{{ events.date }}
+                        </div>
+                        <div class="bg-[#F2F4FF] text-[#2A07F9] px-3 py-1 rounded-lg text-sm font-medium">
+                            <i class="fas fa-map-marker-alt px-1"></i>{{ events.location }} ({{ events.venue.name }})
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ events.title }}</h3>
+                    <p class="text-gray-600 mb-4">{{ events.description|truncatechars:50 }}</p>
+                </div>
+            </a>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-8">
+            <button
+                class="px-8 py-2 rounded-full border-2 border-[#2A07F9] text-[#2A07F9] bg-transparent hover:bg-[#2A07F9] hover:text-white transition">
+                Load More
+            </button>
+        </div>
+        {% else %}
+        <div class="flex justify-center items-center">
+            <p class="text-[#1D275F] text-xl font-medium opacity-60">No past events yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</section>

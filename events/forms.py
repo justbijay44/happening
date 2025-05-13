@@ -4,7 +4,7 @@ from .models import Event
 class EventProposalForm(forms.ModelForm):
     class Meta:
         model = Event
-        fields = ['title', 'image', 'description', 'date', 'venue', 'event_type']
+        fields = ['title', 'image', 'description', 'date', 'expected_attendees','event_type']
         widgets = {
             'date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
         }

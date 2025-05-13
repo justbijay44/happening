@@ -1,29 +1,27 @@
-{% if user.is_authenticated %}
-    {% if recommended_events and recommended_events|length > 0 %}
-        <section class="py-16 bg-gray-100">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 class="text-3xl font-bold text-[#1D275F] mb-8">Recommended for You</h2>
-                <div class="grid grid-cols-1 md:grid-cols-3">
-                    {% for event in recommended_events %}
-                        <a href="{% url 'event_detail' event.id %}"
-                            class="block bg-white rounded-xl shadow-lg overflow-hidden mx-6 my-8">
-                            <img src="{{ event.image.url }}" alt="{{ event.title }}" class="w-full h-56 object-cover">
-                            <div class="p-4">
-                                <div class="flex space-x-2 mb-2">
-                                    <div class="bg-[#2A07F9] text-white px-3 py-1 rounded-lg text-sm font-medium">{{ event.date }}</div>
-                                    <div class="bg-[#F2F4FF] text-[#2A07F9] px-3 py-1 rounded-lg text-sm font-medium">
-                                        <i class="fas fa-map-marker-alt px-1"></i>{{ event.location }} ({{ event.venue.name }})
-                                    </div>
-                                </div>
-                                <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ event.title }}</h3>
-                                <p class="text-gray-600 mb-4">{{ event.description|truncatechars:50 }}</p>
-                            </div>
-                        </a>
-                    {% endfor %}
+<section class="py-16 bg-gray-100 flex flex-col justify-between">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <!-- Align the heading to the left -->
+        <h2 class="text-3xl font-bold text-[#1D275F] mb-8 text-center">Recommended for You</h2>
+        {% if recommended_events %}
+        <div class="grid grid-cols-1 md:grid-cols-3">
+            {% for event in recommended_events %}
+            <a href="{% url 'event_detail' event.id %}" class="block bg-white rounded-xl shadow-lg overflow-hidden mx-6 my-8">
+                <img src="{{ event.image.url }}" alt="{{ event.title }}" class="w-full h-56 object-cover">
+                <div class="p-4">
+                    <div class="flex space-x-2 mb-2">
+                        <div class="bg-[#2A07F9] text-white px-3 py-1 rounded-lg text-sm font-medium">{{ event.date }}</div>
+                        <div class="bg-[#F2F4FF] text-[#2A07F9] px-3 py-1 rounded-lg text-sm font-medium">
+                            <i class="fas fa-map-marker-alt px-1"></i>{{ event.location }} ({{ event.venue.name }})
+                        </div>
+                    </div>
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">{{ event.title }}</h3>
+                    <p class="text-gray-600 mb-4">{{ event.description|truncatechars:50 }}</p>
                 </div>
-            </div>
-        </section>
-    {% else %}
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
         <p class="text-center py-8 text-gray-600">No personalized recommendations yet. Explore highlighted events!</p>
-    {% endif %}
-{% endif %}
+        {% endif %}
+    </div>
+</section>

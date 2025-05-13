@@ -1,48 +1,52 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
-from .models import Event, EventView, EventParticipation, Volunteer
+from django.core.exceptions import ValidationError
+from .models import Event, EventView, EventParticipation, Volunteer, Rating
 from .forms import EventProposalForm
 from .utils import allocate_venue
 import json
 
 def home(request):
     upcoming_events = Event.objects.filter(is_approved=True, date__gte=timezone.now()).order_by('date')
+
+    past_events = Event.objects.filter(is_approved=True, end_date__lt=timezone.now()) | Event.objects.filter(is_approved=True,
+            end_date__isnull=True, date__lt=timezone.now())
+
     recommended_events = None
 
     if request.user.is_authenticated:
+        # Try collaborative recommendations
         try:
-            with open('recommendations.json', 'r') as f:
-                recommendations = json.load(f)
-            recommended_ids = recommendations.get(str(request.user.id), [])
+            with open('collaborative_recommendations.json', 'r') as f:
+                collaborative_recs = json.load(f)
+            recommended_ids = collaborative_recs.get(str(request.user.id), [])
             if recommended_ids:
                 recommended_events = Event.objects.filter(
                     id__in=recommended_ids,
                     is_approved=True,
                     date__gte=timezone.now()
                 ).order_by('date')[:3]
+        except (FileNotFoundError, json.JSONDecodeError):
+            recommended_events = None
 
-            # If no recommendations or empty, compute on the fly based on viewed events
-            if not recommended_events or not recommended_events.exists():
-                viewed_events = Event.objects.filter(views__user=request.user)
-                if viewed_events.exists():
-                    event_types = set(viewed_events.values_list('event_type', flat=True))
+        # Fallback to content-based recommendations
+        if not recommended_events or not recommended_events.exists():
+            try:
+                with open('recommendations.json', 'r') as f:
+                    recommendations = json.load(f)
+                recommended_ids = recommendations.get(str(request.user.id), [])
+                if recommended_ids:
                     recommended_events = Event.objects.filter(
-                        event_type__in=event_types,
+                        id__in=recommended_ids,
                         is_approved=True,
                         date__gte=timezone.now()
-                    ).exclude(proposed_by=request.user).order_by('date')[:3]
+                    ).order_by('date')[:3]
+            except (FileNotFoundError, json.JSONDecodeError):
+                recommended_events = None
 
-            # Final fallback to highlighted events
-            if not recommended_events or not recommended_events.exists():
-                recommended_events = Event.objects.filter(
-                    is_approved=True,
-                    date__gte=timezone.now(),
-                    is_highlight=True
-                ).order_by('date')[:3]
-
-        except (FileNotFoundError, json.JSONDecodeError):
-            # Fallback to event_type matching if JSON fails
+        # Fallback to event_type matching
+        if not recommended_events or not recommended_events.exists():
             viewed_events = Event.objects.filter(views__user=request.user)
             if viewed_events.exists():
                 event_types = set(viewed_events.values_list('event_type', flat=True))
@@ -51,12 +55,14 @@ def home(request):
                     is_approved=True,
                     date__gte=timezone.now()
                 ).exclude(proposed_by=request.user).order_by('date')[:3]
-            if not recommended_events or not recommended_events.exists():
-                recommended_events = Event.objects.filter(
-                    is_approved=True,
-                    date__gte=timezone.now(),
-                    is_highlight=True
-                ).order_by('date')[:3]
+
+        # Final fallback to highlighted events
+        if not recommended_events or not recommended_events.exists():
+            recommended_events = Event.objects.filter(
+                is_approved=True,
+                date__gte=timezone.now(),
+                is_highlight=True
+            ).order_by('date')[:3]
 
     # Form handling
     if request.method == 'POST':
@@ -83,6 +89,7 @@ def home(request):
 
     context = {
         'upcoming_events': upcoming_events,
+        'past_events': past_events,
         'recommended_events': recommended_events,
         'form': form,
     }
@@ -203,3 +210,31 @@ def my_events(request):
         'volunteering': volunteering,
     }
     return render(request, 'events/my_events.html', context)
+
+def rate_event(request, event_id):
+    if not request.user.is_authenticated:
+        return redirect('account_login')
+    
+    event = get_object_or_404(Event, id=event_id, is_approved=True)
+    # Check if event has ended
+    end_time = event.end_date or event.date
+    if end_time >= timezone.now():
+        messages.error(request, "You can only rate events that have ended.")
+        return redirect('event_detail', event_id=event_id)
+    
+    if request.method == 'POST':
+        score = request.POST.get('score')
+        if score and score in ['1', '2', '3', '4', '5']:
+            try:
+                Rating.objects.update_or_create(
+                    event=event,
+                    user=request.user,
+                    defaults={'score': int(score)}
+                )
+                messages.success(request, f"Thank you for rating {event.title}!")
+            except ValidationError as e:
+                messages.error(request, str(e))
+        else:
+            messages.error(request, "Please select a valid rating.")
+        return redirect('event_detail', event_id=event_id)
+    return redirect('event_detail', event_id=event_id)

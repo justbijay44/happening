@@ -28,36 +28,19 @@
                     class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
                     required></textarea>
             </div>
+            <!-- Expected Attendees -->
+            <div>
+                <label for="id_expected_attendees" class="block text-gray-700 font-semibold mb-2">Expected Attendees</label>
+                <input type="number" name="attendees" id="id_expected_attendees"
+                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
+                    required>
+            </div>
             <!-- Date -->
             <div>
                 <label for="id_date" class="block text-gray-700 font-semibold mb-2">Date and Time</label>
                 <input type="datetime-local" name="date" id="id_date"
                     class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
                     required>
-            </div>
-            <!-- Location -->
-            <div>
-                <label for="id_location" class="block text-gray-700 font-semibold mb-2">Location</label>
-                <input type="text" name="location" id="id_location"
-                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    required>
-            </div>
-            <!-- Venue -->
-            <div>
-                <label for="id_venue" class="block text-gray-700 font-semibold mb-2">Venue</label>
-                <select name="venue" id="id_venue"
-                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    required>
-                    {% for venue in form.venue.field.queryset %}
-                    <option value="{{ venue.id }}">{{ venue.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <!-- Category -->
-            <div>
-                <label for="id_category" class="block text-gray-700 font-semibold mb-2">Category (Optional)</label>
-                <input type="text" name="category" id="id_category"
-                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600">
             </div>
             <!-- Event Type -->
             <div>

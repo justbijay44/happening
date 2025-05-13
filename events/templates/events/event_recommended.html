@@ -2,7 +2,7 @@
     {% if recommended_events and recommended_events|length > 0 %}
         <section class="py-16 bg-gray-100">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-                <h2 class="text-3xl font-bold text-purple-600 mb-8">Recommended for You</h2>
+                <h2 class="text-3xl font-bold text-[#1D275F] mb-8">Recommended for You</h2>
                 <div class="grid grid-cols-1 md:grid-cols-3">
                     {% for event in recommended_events %}
                         <a href="{% url 'event_detail' event.id %}"

@@ -3,6 +3,7 @@ from django.utils import timezone
 from django.contrib import messages
 from .models import Event, EventView, EventParticipation, Volunteer
 from .forms import EventProposalForm
+from .utils import allocate_venue
 import json
 
 def home(request):
@@ -66,7 +67,16 @@ def home(request):
         if form.is_valid():
             event = form.save(commit=False)
             event.proposed_by = request.user
+            if request.user.is_superuser:
+                event.is_approved = True
             event.save()
+            if event.is_approved:
+                if allocate_venue(event):
+                    messages.success(request, f"Venue allocated for {event.title}.")
+                else:
+                    messages.warning(request, f"No suitable venue available for {event.title}.")
+            else:
+                messages.info(request, f"Event {event.title} submitted for approval.")
             return redirect('home')
     else:
         form = EventProposalForm()

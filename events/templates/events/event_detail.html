@@ -56,17 +56,15 @@
 </section>
 
 <div class="mt-20 p-6 ">
-    <!-- Title and Description -->
     <h2 class="text-3xl font-bold text-[#1D275F] mb-6">{{ event.title }}</h2>
     <p class="text-[#1D275F] text-lg leading-relaxed mb-8">{{ event.description }}</p>
 
-    <!-- Event Details -->
     <div class="flex flex-wrap gap-4 mb-8 p-4 rounded-lg">
-        <span class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">{{ event.date|date:"F d, Y, g:i A" }}</span>
-        <span class="bg-gray-200 text-gray-800 px-4 py-2 rounded-lg text-sm font-medium">
+        <span class="bg-[#2A07F9] text-white px-4 py-2 rounded-full text-sm font-medium">{{ event.date|date:"F d, Y, g:i A" }}</span>
+        <span class="bg-[#F2F4FF] text-[#1D275F] px-4 py-2 rounded-full text-sm font-medium border-2 border-[#1D275F]">
             <i class="fas fa-map-marker-alt mr-2"></i>{{ event.location }} ({{ event.venue.name }})
         </span>
-        <span class="bg-purple-100 text-purple-700 px-4 py-2 rounded-lg text-sm font-medium">
+        <span class="bg-[#FFC0CC] text-[#F10034] px-4 py-2 rounded-lg text-sm font-medium">
             Event Type: {{ event.event_type|capfirst }}
         </span>
         {% if event.category %}
@@ -76,9 +74,8 @@
         {% endif %}
     </div>
 
-    <!-- Back to Home Button -->
     <div class="text-right">
-        <a href="{% url 'home' %}" class="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-300">
+        <a href="{% url 'home' %}" class="inline-block bg-[#2A07F9] hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition duration-300">
             Back to Home
         </a>
     </div>

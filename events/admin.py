@@ -8,6 +8,7 @@ class EventAdmin(admin.ModelAdmin):
     list_display = ('title', 'date', 'venue', 'is_approved', 'proposed_by')
     list_filter = ('is_approved', 'date', 'event_type')
     search_fields = ('title', 'description')
+    ordering = ['is_approved', '-date']
     actions = ['approve_events']
 
     def approve_events(self, request, queryset):
@@ -33,7 +34,7 @@ class EventParticipationAdmin(admin.ModelAdmin):
 
 @admin.register(Volunteer)
 class VolunteerAdmin(admin.ModelAdmin):
-    list_display = ('user', 'event', 'is_approved')
+    list_display = ('user', 'event', 'is_approved', 'signup_date')  # Added signup_date to list_display
     list_filter = ('is_approved',)
     search_fields = ('user__username', 'event__title')
     actions = ['approve_volunteers']

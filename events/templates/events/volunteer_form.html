@@ -1,5 +1,6 @@
-<!-- templates/events/volunteer_form.html -->
 {% extends 'layout.html' %}
+{% block navbar %}
+{% endblock %}
 
 {% block content %}
 <section class="py-16 bg-gray-100">
@@ -9,45 +10,47 @@
         {% if messages %}
         <div class="mb-4">
             {% for message in messages %}
-            <div class="{% if message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% else %}bg-green-100 border-green-400 text-green-700{% endif %} px-4 py-3 rounded relative" role="alert">
+            <div class="{% if message.tags == 'error' %}bg-red-100 border-red-400 text-red-700{% elif message.tags == 'success' %}bg-green-100 border-green-400 text-green-700{% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} px-4 py-3 rounded relative" role="alert">
                 <span class="block sm:inline">{{ message }}</span>
             </div>
             {% endfor %}
         </div>
         {% endif %}
         
-        {% if existing_volunteer %}
-        <div class="bg-blue-100 border-blue-400 text-blue-700 px-4 py-3 rounded mb-4">
-            <p>You're currently volunteering as: <strong>{{ existing_volunteer.get_role_display }}</strong></p>
-            <p>Status: {% if existing_volunteer.is_approved %}Approved{% else %}Pending Approval{% endif %}</p>
-        </div>
-        {% endif %}
-        
-        <form method="post" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
+        <form method="POST" class="bg-white shadow-md rounded px-8 pt-6 pb-8 mb-4">
             {% csrf_token %}
             <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2" for="role">
-                    Choose a role:
+                <label for="id_hobbies_interests" class="block text-gray-700 text-sm font-bold mb-2">
+                    Tell us about your hobbies and interests!
                 </label>
-                <select name="role" id="role" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
-                    <option value="" disabled selected>Select a role</option>
-                    <option value="coordinator" {% if existing_volunteer and existing_volunteer.role == 'coordinator' %}selected{% endif %}>Event Coordinator</option>
-                    <option value="setup" {% if existing_volunteer and existing_volunteer.role == 'setup' %}selected{% endif %}>Setup Crew</option>
-                    <option value="registration" {% if existing_volunteer and existing_volunteer.role == 'registration' %}selected{% endif %}>Registration</option>
-                    <option value="technical" {% if existing_volunteer and existing_volunteer.role == 'technical' %}selected{% endif %}>Technical Support</option>
-                    <option value="other" {% if existing_volunteer and existing_volunteer.role == 'other' %}selected{% endif %}>Other</option>
-                </select>
+                {{ form.hobbies_interests|default:"Not specified" }}
             </div>
             
             <div class="flex items-center justify-between">
-                <button class="bg-purple-600 hover:bg-purple-700 text-black font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
-                    {% if existing_volunteer %}Update Role{% else %}Volunteer{% endif %}
+                {% if not existing_volunteer %}
+                <button class="bg-purple-600 hover:bg-purple-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline" type="submit">
+                    Apply to Volunteer
                 </button>
+                {% endif %}
                 <a href="{% url 'event_detail' event.id %}" class="inline-block align-baseline font-bold text-sm text-purple-600 hover:text-purple-800">
-                    Cancel
+                    Go Back
                 </a>
             </div>
         </form>
+
+    {% if existing_volunteer %}
+    <div class="{% if existing_volunteer.is_approved %}bg-green-100 border-green-400 text-green-700{% else %}bg-blue-100 border-blue-400 text-blue-700{% endif %} px-4 py-3 rounded mb-4">
+        <p>Status: {% if existing_volunteer.is_approved %}Approved{% else %}Pending Approval{% endif %}</p>
+        <p>
+            {% if existing_volunteer.is_approved %}
+                You have been approved.
+            {% else %}
+                You have already sent a form, wait for the team to respond.
+            {% endif %}
+        </p>
+    </div>
+    {% endif %}
+
     </div>
 </section>
 {% endblock %}

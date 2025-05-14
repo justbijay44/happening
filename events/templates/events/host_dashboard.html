@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Host Dashboard</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+
+<body class="bg-gray-100">
+
+    <div class="container mx-auto p-4 flex">
+        <!-- Sidebar -->
+        <div class="w-1/4 bg-white p-4 rounded shadow mr-4">
+            <h2 class="text-xl font-bold mb-4">Host Dashboard</h2>
+            <ul>
+                <li class="mb-2">
+                    <a href="{% url 'host_dashboard' tab='volunteers' %}"
+                        class="block p-2 rounded {% if tab == 'volunteers' %}bg-blue-500 text-white{% else %}hover:bg-gray-200{% endif %}">
+                        Volunteers
+                    </a>
+                </li>
+                <li class="mb-2">
+                    <a href="{% url 'host_dashboard' tab='chat' %}"
+                        class="block p-2 rounded {% if tab == 'chat' %}bg-blue-500 text-white{% else %}hover:bg-gray-200{% endif %}">
+                        Chat
+                    </a>
+                </li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="w-3/4 bg-white p-4 rounded shadow">
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} p-2 rounded">
+                    {{ message }}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if notifications %}
+            <div class="mb-4 p-4 bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700">
+                <h3 class="font-bold">Notifications</h3>
+                <ul>
+                    {% for notification in notifications %}
+                    <li>{{ notification }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% endif %}
+
+            {% if tab == 'volunteers' %}
+            <h2 class="text-2xl font-bold mb-4">Manage Volunteers</h2>
+            {% for event, volunteers in volunteers_by_event.items %}
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold">{{ event.title }}</h3>
+                {% if volunteers %}
+                <table class="w-full border-collapse border border-gray-300 mt-2">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="border p-2">User</th>
+                            <th class="border p-2">Role</th>
+                            <th class="border p-2">Status</th>
+                            <th class="border p-2">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for volunteer in volunteers %}
+                        <tr>
+                            <td class="border p-2">{{ volunteer.user.username }}</td>
+                            <td class="border p-2">{{ volunteer.role|default:"N/A" }}</td>
+                            <td class="border p-2">{{ volunteer.is_approved|yesno:"Approved,Pending" }}</td>
+                            <td class="border p-2">
+                                {% if not volunteer.is_approved %}
+                                <form method="POST" action="{% url 'manage_volunteers' volunteer.id %}" class="inline">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="approve">
+                                    <button type="submit"
+                                        class="bg-green-500 text-white p-1 rounded hover:bg-green-600">Approve</button>
+                                </form>
+                                <form method="POST" action="{% url 'manage_volunteers' volunteer.id %}"
+                                    class="inline ml-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="reject">
+                                    <button type="submit"
+                                        class="bg-red-500 text-white p-1 rounded hover:bg-red-600">Reject</button>
+                                </form>
+                                {% else %}
+                                <span class="text-gray-500">Approved</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <p>No volunteers for this event.</p>
+                {% endif %}
+            </div>
+            {% empty %}
+            <p>You have no events to manage volunteers for.</p>
+            {% endfor %}
+            {% elif tab == 'chat' %}
+            <h2 class="text-2xl font-bold mb-4">Group Chat</h2>
+            {% for event, messages in messages_by_event.items %}
+            <div class="mb-6">
+                <h3 class="text-xl font-semibold">{{ event.title }}</h3>
+                <div class="bg-gray-100 p-4 rounded max-h-96 overflow-y-auto mb-4">
+                    {% for message in messages %}
+                    <div class="mb-2">
+                        <strong>{{ message.user.username }}</strong> <span class="text-gray-500 text-sm">
+                           {{ message.created_at|date:"M d, Y H:i" }}</span>
+                        <p>{{ message.content }}</p>
+                    </div>
+                    {% empty %}
+                    <p>No messages yet.</p>
+                    {% endfor %}
+                </div>
+                <form method="POST" class="flex items-center">
+                    {% csrf_token %}
+                    <input type="hidden" name="send_message_{{ event.id }}">
+                    <input type="text" name="content" class="border rounded p-2 flex-grow"
+                        placeholder="Type your message..." required>
+                    <button type="submit"
+                        class="ml-2 bg-blue-500 text-white p-2 rounded hover:bg-blue-600">Send</button>
+                </form>
+            </div>
+            {% empty %}
+            <p>No events with chat access.</p>
+            {% endfor %}
+            {% endif %}
+        </div>
+    </div>
+</body>
+
+</html>

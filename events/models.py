@@ -2,6 +2,10 @@ from django.db import models
 from django.utils import timezone
 from django.contrib.auth.models import User
 from django.core.exceptions import ValidationError
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib import messages
+from django.core.validators import RegexValidator
 
 class Venue(models.Model):
     name = models.CharField(max_length=200)
@@ -33,7 +37,7 @@ class Event(models.Model):
     proposed_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='proposed_events', null=True, blank=True)
     expected_attendees = models.IntegerField(default=0)
     email = models.EmailField(max_length=100, blank=True, default='')
-    phone_number = models.CharField(max_length=10, blank=True, default='')
+    phone_number = models.CharField(max_length=10, blank=True, default='',validators=[RegexValidator(r'^\d{10}$', 'Enter a valid 10-digit phone number.')])
 
     def clean(self):
         if self.end_date and self.end_date < self.date:
@@ -79,16 +83,9 @@ class EventParticipation(models.Model):
         return f"{self.user.username} is {self.status} to {self.event.title}"
 
 class Volunteer(models.Model):
-    EVENT_ROLES = [
-        ('coordinator', 'Event Coordinator'),
-        ('setup', 'Setup Crew'),
-        ('registration', 'Registration'),
-        ('technical', 'Technical Support'),
-        ('other', 'Other')
-    ]
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='volunteers')
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='volunteering')
-    role = models.CharField(max_length=20, choices=EVENT_ROLES, default='other')
+    hobbies_interests = models.TextField(blank=True, help_text="Your hobbies and interests")
     signup_date = models.DateTimeField(auto_now_add=True)
     is_approved = models.BooleanField(default=False)
 
@@ -96,7 +93,7 @@ class Volunteer(models.Model):
         unique_together = ('event', 'user')
     
     def __str__(self):
-        return f"{self.user.username} is volunteering for {self.event.title} as {self.role} (Approved: {self.is_approved})"
+        return f"{self.user.username} is volunteering for {self.event.title} (Approved: {self.is_approved})"
     
 class VenueBooking(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="venue_bookings")
@@ -146,3 +143,21 @@ class Rating(models.Model):
 
     def __str__(self):
         return f"{self.user.username} rated {self.event.title} {self.score}/5"
+
+class GroupMessage(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='messages')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
+    content = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.user.username} in {self.event.title}: {self.content[:50]}"
+
+@receiver(post_save, sender=Volunteer)
+def notify_host_of_volunteer(sender, instance, created, **kwargs):
+    if created and not instance.is_approved:
+        event = instance.event
+        host = event.proposed_by
+        if host:
+            messages.info(request=None, message=f"New volunteer request from {instance.user.username} for {event.title}.", extra_tags='host_notification')
+            # Note: 'request' is None here; we'll handle display in the dashboard view

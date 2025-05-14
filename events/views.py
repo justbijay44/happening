@@ -2,16 +2,21 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
 from django.core.exceptions import ValidationError
-from .models import Event, EventView, EventParticipation, Volunteer, Rating
-from .forms import EventProposalForm
+from .models import Event, EventView, EventParticipation, Volunteer, Rating, GroupMessage
+from .forms import EventProposalForm, VolunteerForm
 from .utils import allocate_venue
 import json
 
 def home(request):
-    upcoming_events = Event.objects.filter(is_approved=True, date__gte=timezone.now()).order_by('date')
+    upcoming_events = (
+    Event.objects.filter(is_approved=True, end_date__gte=timezone.now()) |
+    Event.objects.filter(is_approved=True, end_date__isnull=True, date__gte=timezone.now())
+        ).order_by('date').distinct()
 
-    past_events = Event.objects.filter(is_approved=True, end_date__lt=timezone.now()) | Event.objects.filter(is_approved=True,
-            end_date__isnull=True, date__lt=timezone.now())
+    past_events = (
+    Event.objects.filter(is_approved=True, end_date__lt=timezone.now()) |
+    Event.objects.filter(is_approved=True, end_date__isnull=True, date__lt=timezone.now())
+        ).order_by('-date').distinct()
 
     recommended_events = None
 
@@ -100,7 +105,10 @@ def event_detail(request, event_id):
     going_count = EventParticipation.objects.filter(event=event, status='going').count()
     
     user_is_going = False
-    user_volunteer = None
+    existing_volunteer = None
+
+    end_date = event.end_date if event.end_date else event.date
+    event_has_ended = end_date < timezone.now()
 
     if request.user.is_authenticated:
         EventView.objects.get_or_create(event=event, user=request.user)
@@ -111,13 +119,14 @@ def event_detail(request, event_id):
         except EventParticipation.DoesNotExist:
             user_is_going = False
     
-        user_volunteer = Volunteer.objects.filter(event=event, user=request.user).first()
+        existing_volunteer = Volunteer.objects.filter(event=event, user=request.user).first()
 
     context = {
         'event': event,
         'going_count': going_count,
         'user_is_going': user_is_going,
-        'user_volunteer': user_volunteer,
+        'existing_volunteer': existing_volunteer,
+        'event_has_ended': event_has_ended,
     }
     return render(request, 'events/event_detail.html', context)
 
@@ -161,35 +170,39 @@ def mark_going(request, event_id):
 def volunteer_for_event(request, event_id):
     if not request.user.is_authenticated:
         return redirect('account_login')
-    
+
     event = get_object_or_404(Event, id=event_id, is_approved=True)
+    existing_volunteer = Volunteer.objects.filter(event=event, user=request.user).first()
+
+    if request.method == 'POST' and existing_volunteer:
+        messages.info(request, "You have already submitted a volunteer application for this event.")
+        return redirect('event_detail', event_id=event_id)
 
     if request.method == 'POST':
-        role = request.POST.get('role')
-        if role:
-            volunteer, created = Volunteer.objects.get_or_create(
+        form = VolunteerForm(request.POST)
+        if form.is_valid():
+            Volunteer.objects.create(
                 event=event,
                 user=request.user,
-                defaults={'role': role, 'is_approved': False}
+                hobbies_interests=form.cleaned_data['hobbies_interests'] or '',
+                is_approved=False
             )
-
-            if created:
-                volunteer.role = role
-                volunteer.save()
-                messages.success(request, f"Your volunteer role has been updated for {event.title}!")
-            else:
-                messages.success(request, f"Thank you for volunteering for {event.title}! Your request is pending approval.")
-
+            messages.success(request, f"Thank you for volunteering for {event.title}! Your request is pending approval.")
             return redirect('event_detail', event_id=event_id)
         else:
-            messages.error(request, "Please select a role.")
-    
-    exisiting_volunteer = Volunteer.objects.filter(event=event, user=request.user).first()
+            messages.error(request, "Please fill out the form correctly.")
+    else:
+        form = VolunteerForm(instance=existing_volunteer)
+        # Make the form read-only if the user has already submitted
+        if existing_volunteer:
+            form.fields['hobbies_interests'].widget.attrs['readonly'] = 'readonly'
+            form.fields['hobbies_interests'].widget.attrs['disabled'] = 'disabled'
+
     context = {
         'event': event,
-        'existing_volunteer': exisiting_volunteer,
+        'form': form,
+        'existing_volunteer': existing_volunteer,
     }
-
     return render(request, 'events/volunteer_form.html', context)
 
 def my_events(request):
@@ -238,3 +251,107 @@ def rate_event(request, event_id):
             messages.error(request, "Please select a valid rating.")
         return redirect('event_detail', event_id=event_id)
     return redirect('event_detail', event_id=event_id)
+
+def host_dashboard(request, tab='volunteers'):
+    if not request.user.is_authenticated:
+        messages.error(request, "You must be logged in to access the host dashboard.")
+        return redirect('account_login')
+
+    # Check if the user is a host of any approved events
+    hosted_events = Event.objects.filter(proposed_by=request.user, is_approved=True)
+    if not hosted_events.exists():
+        messages.error(request, "You are not a host of any approved events.")
+        return redirect('home')
+
+    # Handle notifications from volunteer signal
+    notifications = []
+    for event in hosted_events:
+        pending_volunteers = Volunteer.objects.filter(event=event, is_approved=False)
+        for volunteer in pending_volunteers:
+            notifications.append(f"New volunteer request from {volunteer.user.username} for {event.title}.")
+
+    # Prepare data based on the selected tab
+    context = {
+        'hosted_events': hosted_events,
+        'notifications': notifications,
+        'tab': tab,
+    }
+
+    # Volunteers tab: Show all volunteers for hosted events
+    if tab == 'volunteers':
+        volunteers_by_event = {}
+        for event in hosted_events:
+            volunteers = Volunteer.objects.filter(event=event).select_related('user')
+            volunteers_by_event[event] = volunteers
+        context['volunteers_by_event'] = volunteers_by_event
+
+    # Chat tab: Show messages for each event and handle message sending
+    elif tab == 'chat':
+        messages_by_event = {}
+        for event in hosted_events:
+            # Check if user is authorized to access chat
+            is_participant = EventParticipation.objects.filter(event=event, user=request.user, status='going').exists()
+            is_volunteer = Volunteer.objects.filter(event=event, user=request.user, is_approved=True).exists()
+            is_host = event.proposed_by == request.user
+            if is_host or is_participant or is_volunteer:
+                if request.method == 'POST' and f'send_message_{event.id}' in request.POST:
+                    content = request.POST.get('content')
+                    if content:
+                        GroupMessage.objects.create(event=event, user=request.user, content=content)
+                        messages.success(request, "Message sent successfully!")
+                    return redirect('host_dashboard', tab='chat')
+                chat_messages = GroupMessage.objects.filter(event=event).select_related('user').order_by('created_at')
+                messages_by_event[event] = chat_messages
+        context['messages_by_event'] = messages_by_event
+
+    return render(request, 'events/host_dashboard.html', context)
+
+def manage_volunteers(request, volunteer_id):
+    if not request.user.is_authenticated:
+        return redirect('account_login')
+
+    volunteer = get_object_or_404(Volunteer, id=volunteer_id)
+    event = volunteer.event
+
+    # Ensure the user is the host of the event
+    if event.proposed_by != request.user or not event.is_approved:
+        messages.error(request, "You do not have permission to manage volunteers for this event.")
+        return redirect('host_dashboard', tab='volunteers')
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'approve':
+            volunteer.is_approved = True
+            volunteer.save()
+            messages.success(request, f"Volunteer {volunteer.user.username} approved for {event.title}.")
+        elif action == 'reject':
+            volunteer.delete()
+            messages.success(request, f"Volunteer {volunteer.user.username} rejected for {event.title}.")
+        return redirect('host_dashboard', tab='volunteers')
+
+    return redirect('host_dashboard', tab='volunteers')
+
+def group_chat(request, event_id):
+    if not request.user.is_authenticated:
+        return redirect('account_login')
+
+    event = get_object_or_404(Event, id=event_id, is_approved=True)
+
+    # Check if user is authorized to access chat
+    is_participant = EventParticipation.objects.filter(event=event, user=request.user, status='going').exists()
+    is_volunteer = Volunteer.objects.filter(event=event, user=request.user, is_approved=True).exists()
+    is_host = event.proposed_by == request.user
+
+    if not (is_host or is_participant or is_volunteer):
+        messages.error(request, "You do not have permission to access this chat.")
+        return redirect('home')
+    
+    if request.method == 'POST':
+        content = request.POST.get('content')
+        if content:
+            GroupMessage.objects.create(event=event, user=request.user, content=content)
+            messages.success(request, "Message sent successfully!")
+        return redirect('group_chat', event_id=event_id)
+
+    messages = GroupMessage.objects.filter(event=event).select_related('user').order_by('created_at')
+    return render(request, 'events/group_chat.html', context={'event': event, 'messages': messages})

@@ -4,24 +4,23 @@
         <div class="hidden md:flex space-x-12">
             <a href="" class="hover:text-purple-300">HOME</a>
             <a href="" class="hover:text-purple-300">SCHEDULE</a>
-            <a href="" class="hover:text-purple-300">BE PART OF</a>
+            {% if user.is_authenticated %}
+            <div class="relative inline-block text-left">
+                <button id="dropdownButton" class="hover:text-purple-300 focus:outline-none">
+                    BE PART OF <i class="fa fa-chevron-down text-xs"></i>
+                </button>
+
+                <div id="dropdownMenu" class="absolute right-0 mt-2 w-30 bg-white rounded-md shadow-lg hidden z-50">
+                    <a href="{% url 'volunteer_management' %}" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Volunteer</a>
+                    <a href="#" class="block px-4 py-2 text-gray-700 hover:bg-gray-200">Chat</a>
+                </div>
+            </div>
+            {% endif %}
             <a href="{% url 'my_events' %}" class="hover:text-purple-300">MY EVENTS</a>
-            
-            <a href="{% url 'host_dashboard' %}" class="text-white hover:text-blue-200">VOLUNTEER</a>
-            
             <a href="" class="hover:text-purple-300">ABOUT</a>
-        </div>
-        <div class="md:hidden">
-            <button id="menu-btn" class="focus:outline-none">
-                <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7">
-                    </path>
-                </svg>
-            </button>
         </div>
         {% if user.is_authenticated %}
         <div>
-            
             <a href="{% url 'account_login' %}"
                 class="bg-transparent border-2 border-white px-4 py-2 rounded text-white font-medium hover:bg-white hover:text-purple-900 transition">{{ request.user }}</a>
             <a href="{% url 'account_logout' %}"
@@ -39,16 +38,22 @@
         {% endif %}
 
     </div>
-    <div id="menu" class="hidden md:hidden bg-purple-800 p-4">
-        <a href="" class="block py-2 hover:text-purple-300">HOME</a>
-        <a href="" class="block py-2 hover:text-purple-300">SCHEDULE</a>
-        <a href="" class="block py-2 hover:text-purple-300">BE PART OF</a>
-        <a href="" class="block py-2 hover:text-purple-300">ABOUT</a>
-    </div>
 </nav>
 
-<!-- <script>
-    document.getElementById('menu-btn').addEventListener('click', function() {
-        document.getElementById('menu').classList.toggle('hidden');
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const button = document.getElementById("dropdownButton");
+        const menu = document.getElementById("dropdownMenu");
+
+        button.addEventListener("click", function (event) {
+            event.stopPropagation();
+            menu.classList.toggle("hidden");
+        });
+
+        document.addEventListener("click", function (event) {
+            if (!menu.contains(event.target)) {
+                menu.classList.add("hidden");
+            }
+        });
     });
-</script> -->
+</script>

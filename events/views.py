@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
 from django.contrib import messages
+from django.db.models import Avg
 from django.core.exceptions import ValidationError
 from .models import Event, EventView, EventParticipation, Volunteer, Rating, GroupMessage
 from .forms import EventProposalForm, VolunteerForm
@@ -121,12 +122,20 @@ def event_detail(request, event_id):
     
         existing_volunteer = Volunteer.objects.filter(event=event, user=request.user).first()
 
+        user_has_rated = Rating.objects.filter(event=event, user=request.user).exists()
+
+    average_rating = Rating.objects.filter(event=event).aggregate(Avg('score'))['score__avg']
+    if average_rating is not None:
+        average_rating = round(average_rating, 2)
+
     context = {
         'event': event,
         'going_count': going_count,
         'user_is_going': user_is_going,
         'existing_volunteer': existing_volunteer,
         'event_has_ended': event_has_ended,
+        'average_rating': average_rating,
+        'user_has_rated': user_has_rated,
     }
     return render(request, 'events/event_detail.html', context)
 
@@ -169,31 +178,33 @@ def mark_going(request, event_id):
 
 def volunteer_for_event(request, event_id):
     if not request.user.is_authenticated:
+        messages.error(request, "You must be logged in to volunteer.")
         return redirect('account_login')
 
     event = get_object_or_404(Event, id=event_id, is_approved=True)
     existing_volunteer = Volunteer.objects.filter(event=event, user=request.user).first()
 
-    if request.method == 'POST' and existing_volunteer:
-        messages.info(request, "You have already submitted a volunteer application for this event.")
-        return redirect('event_detail', event_id=event_id)
-
     if request.method == 'POST':
+        if existing_volunteer:
+            messages.info(request, f"You have already volunteered for {event.title}.")
+            return redirect('event_detail', event_id=event_id)
+        
         form = VolunteerForm(request.POST)
         if form.is_valid():
-            Volunteer.objects.create(
+            volunteer = Volunteer.objects.create(
                 event=event,
                 user=request.user,
                 hobbies_interests=form.cleaned_data['hobbies_interests'] or '',
                 is_approved=False
             )
-            messages.success(request, f"Thank you for volunteering for {event.title}! Your request is pending approval.")
-            return redirect('event_detail', event_id=event_id)
-        else:
-            messages.error(request, "Please fill out the form correctly.")
+            if volunteer:
+                messages.success(request, f"Your volunteer application for {event.title} has been submitted!")
+                return redirect('event_detail', event_id=event_id)
+            else:
+                messages.error(request, "Failed to submit volunteer application. Please try again.")
+                return redirect('volunteer_for_event', event_id=event_id)
     else:
         form = VolunteerForm(instance=existing_volunteer)
-        # Make the form read-only if the user has already submitted
         if existing_volunteer:
             form.fields['hobbies_interests'].widget.attrs['readonly'] = 'readonly'
             form.fields['hobbies_interests'].widget.attrs['disabled'] = 'disabled'
@@ -252,9 +263,9 @@ def rate_event(request, event_id):
         return redirect('event_detail', event_id=event_id)
     return redirect('event_detail', event_id=event_id)
 
-def host_dashboard(request, tab='volunteers'):
+def volunteer_management(request):
     if not request.user.is_authenticated:
-        messages.error(request, "You must be logged in to access the host dashboard.")
+        messages.error(request, "You must be logged in to access volunteer management.")
         return redirect('account_login')
 
     # Check if the user is a host of any approved events
@@ -263,48 +274,22 @@ def host_dashboard(request, tab='volunteers'):
         messages.error(request, "You are not a host of any approved events.")
         return redirect('home')
 
-    # Handle notifications from volunteer signal
-    notifications = []
-    for event in hosted_events:
-        pending_volunteers = Volunteer.objects.filter(event=event, is_approved=False)
-        for volunteer in pending_volunteers:
-            notifications.append(f"New volunteer request from {volunteer.user.username} for {event.title}.")
+    # Filter out events that have started or are over
+    current_time = timezone.now()
+    active_events = [event for event in hosted_events if event.date > current_time]
 
-    # Prepare data based on the selected tab
+    # Prepare volunteer data as a list of tuples
+    event_volunteers = []
+    for event in active_events:
+        volunteers = Volunteer.objects.filter(event=event).select_related('user')
+        event_volunteers.append((event, volunteers))
+
     context = {
-        'hosted_events': hosted_events,
-        'notifications': notifications,
-        'tab': tab,
+        'hosted_events': active_events,
+        'event_volunteers': event_volunteers,
     }
 
-    # Volunteers tab: Show all volunteers for hosted events
-    if tab == 'volunteers':
-        volunteers_by_event = {}
-        for event in hosted_events:
-            volunteers = Volunteer.objects.filter(event=event).select_related('user')
-            volunteers_by_event[event] = volunteers
-        context['volunteers_by_event'] = volunteers_by_event
-
-    # Chat tab: Show messages for each event and handle message sending
-    elif tab == 'chat':
-        messages_by_event = {}
-        for event in hosted_events:
-            # Check if user is authorized to access chat
-            is_participant = EventParticipation.objects.filter(event=event, user=request.user, status='going').exists()
-            is_volunteer = Volunteer.objects.filter(event=event, user=request.user, is_approved=True).exists()
-            is_host = event.proposed_by == request.user
-            if is_host or is_participant or is_volunteer:
-                if request.method == 'POST' and f'send_message_{event.id}' in request.POST:
-                    content = request.POST.get('content')
-                    if content:
-                        GroupMessage.objects.create(event=event, user=request.user, content=content)
-                        messages.success(request, "Message sent successfully!")
-                    return redirect('host_dashboard', tab='chat')
-                chat_messages = GroupMessage.objects.filter(event=event).select_related('user').order_by('created_at')
-                messages_by_event[event] = chat_messages
-        context['messages_by_event'] = messages_by_event
-
-    return render(request, 'events/host_dashboard.html', context)
+    return render(request, 'events/volunteer_management.html', context)
 
 def manage_volunteers(request, volunteer_id):
     if not request.user.is_authenticated:
@@ -316,8 +301,8 @@ def manage_volunteers(request, volunteer_id):
     # Ensure the user is the host of the event
     if event.proposed_by != request.user or not event.is_approved:
         messages.error(request, "You do not have permission to manage volunteers for this event.")
-        return redirect('host_dashboard', tab='volunteers')
-    
+        return redirect('volunteer_management')
+
     if request.method == 'POST':
         action = request.POST.get('action')
         if action == 'approve':
@@ -327,9 +312,9 @@ def manage_volunteers(request, volunteer_id):
         elif action == 'reject':
             volunteer.delete()
             messages.success(request, f"Volunteer {volunteer.user.username} rejected for {event.title}.")
-        return redirect('host_dashboard', tab='volunteers')
+        return redirect('volunteer_management')
 
-    return redirect('host_dashboard', tab='volunteers')
+    return redirect('volunteer_management')
 
 def group_chat(request, event_id):
     if not request.user.is_authenticated:

@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.contrib import messages
-from .models import Event, Venue, EventParticipation, Volunteer, VenueBooking
+from .models import Event, Venue, EventParticipation, Volunteer, VenueBooking, Rating
 from .utils import allocate_venue
 
 @admin.register(Event)
@@ -49,3 +49,5 @@ class VenueBookingAdmin(admin.ModelAdmin):
     list_display = ('event', 'venue', 'start_time', 'end_time')
     list_filter = ('start_time',)
     search_fields = ('event__title', 'venue__name')
+
+admin.site.register(Rating)

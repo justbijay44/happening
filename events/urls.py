@@ -8,8 +8,7 @@ urlpatterns = [
     path('event/<int:event_id>/volunteer/', views.volunteer_for_event, name='volunteer_for_event'),
     path('my-events/', views.my_events, name='my_events'),
     path('event/<int:event_id>/rate/', views.rate_event, name='rate_event'),
-    path('host-dashboard/<str:tab>/', views.host_dashboard, name='host_dashboard'),
-    path('host-dashboard/', views.host_dashboard, name='host_dashboard'),
+    path('volunteer-management/', views.volunteer_management, name='volunteer_management'),
     path('manage-volunteers/<int:volunteer_id>/', views.manage_volunteers, name='manage_volunteers'),
     path('group-chat/<int:event_id>/', views.group_chat, name='group_chat'),
 ]

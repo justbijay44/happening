@@ -125,19 +125,6 @@ class Rating(models.Model):
     score = models.IntegerField(choices=[(i, str(i)) for i in range(1,6)], help_text="Rating from 1 to 5")
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def clean(self):
-        # Check if event has ended
-        end_time = self.event.end_date or self.event.date
-        if end_time >= timezone.now():
-            raise ValidationError("Ratings are only allowed for events that have ended.")
-        # Check if user participated (status='going')
-        if not EventParticipation.objects.filter(
-            event=self.event,
-            user=self.user,
-            status='going'
-        ).exists():
-            raise ValidationError("Only users who participated in the event can rate it.")
-
     class Meta:
         unique_together=('event', 'user')
 
@@ -159,5 +146,6 @@ def notify_host_of_volunteer(sender, instance, created, **kwargs):
         event = instance.event
         host = event.proposed_by
         if host:
-            messages.info(request=None, message=f"New volunteer request from {instance.user.username} for {event.title}.", extra_tags='host_notification')
-            # Note: 'request' is None here; we'll handle display in the dashboard view
+            # Instead of using messages framework, we'll store the notification in the database
+            # or handle it in the view where we have access to the request object
+            pass

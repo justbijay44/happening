@@ -1,0 +1,82 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% block title %}Volunteer Management - Happening{% endblock %}
+
+{% block navbar %}
+<!-- Empty to avoid -->
+{% endblock %}
+{% block content %}
+    <div class="container mx-auto p-4 flex">
+        <!-- Sidebar -->
+        <div class="w-1/4 bg-white p-4 rounded shadow mr-4">
+    <h2 class="text-xl font-bold mb-4">Events</h2>
+    <ul>
+        {% for event in hosted_events %}
+            <li class="mb-2">
+                <a href="#{{ event.id }}" class="block p-2 rounded hover:bg-gray-200">{{ event.title }}</a>
+            </li>
+        {% empty %}
+            <li>No hosted events.</li>
+        {% endfor %}
+    </ul>
+    <div class="mt-4">
+        <a href="{% url 'home' %}" class="text-blue-500 hover:text-blue-700">Go Back</a>
+    </div>
+</div>
+
+        <!-- Main Content -->
+        <div class="w-3/4 bg-white p-4 rounded shadow">
+    <h2 class="text-2xl font-bold mb-4">Manage Volunteers</h2>
+    {% for event, volunteers in event_volunteers %}
+        <div id="{{ event.id }}" class="mb-6">
+            <h3 class="text-xl font-semibold">{{ event.title }}</h3>
+            {% if volunteers %}
+                <table class="w-full border-collapse border border-gray-300 mt-2">
+                    <thead>
+                        <tr class="bg-gray-200">
+                            <th class="border p-2">User</th>
+                            <th class="border p-2">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for volunteer in volunteers %}
+                            {% if not volunteer.is_approved %}
+                                <tr>
+                                    <td class="border p-2">{{ volunteer.user.username }}</td>
+                                    <td class="border p-2">
+                                        <form method="POST" action="{% url 'manage_volunteers' volunteer.id %}" class="inline">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="approve">
+                                            <button type="submit" class="bg-green-500 text-white p-1 rounded hover:bg-green-600">Accept</button>
+                                        </form>
+                                        <form method="POST" action="{% url 'manage_volunteers' volunteer.id %}" class="inline ml-2">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="action" value="reject">
+                                            <button type="submit" class="bg-red-500 text-white p-1 rounded hover:bg-red-600">Reject</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endif %}
+                        {% empty %}
+                            <p>No pending volunteers.</p>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p>No volunteers interested.</p>
+            {% endif %}
+        </div>
+    {% empty %}
+        <p>No events to manage volunteers for.</p>
+    {% endfor %}
+    {% for event in hosted_events %}
+        {% if event.date <= timezone.now %}
+            <div id="{{ event.id }}" class="mb-6">
+                <h3 class="text-xl font-semibold">{{ event.title }}</h3>
+                <p>It was a fun event, but it's over.</p>
+            </div>
+        {% endif %}
+    {% endfor %}
+</div>
+    </div>
+{% endblock %}

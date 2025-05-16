@@ -131,14 +131,38 @@ class Rating(models.Model):
     def __str__(self):
         return f"{self.user.username} rated {self.event.title} {self.score}/5"
 
-class GroupMessage(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='messages')
+class GroupChat(models.Model):
+    event = models.OneToOneField(Event, on_delete=models.CASCADE, related_name='group_chat')
+    name = models.CharField(max_length=100, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.name:
+            self.name = f"Chat for {self.event.title}"
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return self.name
+    
+class GroupChatMember(models.Model):
+    group_chat = models.ForeignKey(GroupChat, on_delete=models.CASCADE, related_name='memberships')
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='group_chat_memberships')
+    joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('group_chat', 'user')
+
+    def __str__(self):
+        return f"{self.user.username} in {self.group_chat.name}"
+
+class Message(models.Model):
+    group_chat = models.ForeignKey(GroupChat, on_delete=models.CASCADE, related_name='messages', null=True, blank=True)
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='messages')
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.user.username} in {self.event.title}: {self.content[:50]}"
+        return f"{self.user.username}: {self.content[:50]}"
 
 @receiver(post_save, sender=Volunteer)
 def notify_host_of_volunteer(sender, instance, created, **kwargs):
@@ -146,6 +170,4 @@ def notify_host_of_volunteer(sender, instance, created, **kwargs):
         event = instance.event
         host = event.proposed_by
         if host:
-            # Instead of using messages framework, we'll store the notification in the database
-            # or handle it in the view where we have access to the request object
             pass

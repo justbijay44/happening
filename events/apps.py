@@ -7,3 +7,4 @@ class EventsConfig(AppConfig):
     def ready(self):
         import events.utils
         import events.models
+        import events.signals

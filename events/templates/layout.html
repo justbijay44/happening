@@ -16,18 +16,23 @@
     </style>
     <title>{% block title %}Happening{% endblock %}</title>
 </head>
-<body class="bg-gray-100 font-sans">
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
     {% block navbar %}
     {% include 'navbar.html' %}
     {% endblock %}
-    <main>
+
+    <main class="flex-grow">
         {% block content %}
         {% endblock %}
     </main>
+
+    {% block footer%}
     <footer class="bg-[#2A07F9] text-white py-8">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <p>© 2025 Happening. All rights reserved.</p>
         </div>
     </footer>
+    {% endblock %}
 </body>
+
 </html>

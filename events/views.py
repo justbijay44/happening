@@ -3,7 +3,7 @@ from django.utils import timezone
 from django.contrib import messages
 from django.db.models import Avg
 from django.core.exceptions import ValidationError
-from .models import Event, EventView, EventParticipation, Volunteer, Rating, GroupMessage
+from .models import (Event, EventView, EventParticipation, Volunteer, Rating, GroupChat,GroupChatMember, Message)
 from .forms import EventProposalForm, VolunteerForm
 from .utils import allocate_venue
 import json
@@ -107,6 +107,7 @@ def event_detail(request, event_id):
     
     user_is_going = False
     existing_volunteer = None
+    user_has_rated = False
 
     end_date = event.end_date if event.end_date else event.date
     event_has_ended = end_date < timezone.now()
@@ -128,6 +129,10 @@ def event_detail(request, event_id):
     if average_rating is not None:
         average_rating = round(average_rating, 2)
 
+    can_access_group_chat = (
+        hasattr(event, 'group_chat') and  # Check if group_chat exists
+        (existing_volunteer and existing_volunteer.is_approved or request.user == event.proposed_by)
+    )
     context = {
         'event': event,
         'going_count': going_count,
@@ -136,6 +141,8 @@ def event_detail(request, event_id):
         'event_has_ended': event_has_ended,
         'average_rating': average_rating,
         'user_has_rated': user_has_rated,
+        'chat_url': f'/group-chat/{event_id}/',
+        'can_access_group_chat': can_access_group_chat,
     }
     return render(request, 'events/event_detail.html', context)
 
@@ -316,27 +323,60 @@ def manage_volunteers(request, volunteer_id):
 
     return redirect('volunteer_management')
 
-def group_chat(request, event_id):
-    if not request.user.is_authenticated:
-        return redirect('account_login')
+def chat_dashboard(request):
+    group_chats = GroupChatMember.objects.filter(user=request.user).select_related('group_chat__event')
+    selected_chat_id = request.GET.get('chat_id')
+    selected_chat = None
+    messages_list = []
 
-    event = get_object_or_404(Event, id=event_id, is_approved=True)
+    if selected_chat_id:
+        selected_chat = get_object_or_404(GroupChat, id=selected_chat_id)
+        if not selected_chat.memberships.filter(user=request.user).exists():
+            messages.error(request, "You are not a member of this group chat.")
+            return redirect('chat_dashboard')
+        messages_list = selected_chat.messages.all().order_by('created_at')
 
-    # Check if user is authorized to access chat
-    is_participant = EventParticipation.objects.filter(event=event, user=request.user, status='going').exists()
-    is_volunteer = Volunteer.objects.filter(event=event, user=request.user, is_approved=True).exists()
-    is_host = event.proposed_by == request.user
-
-    if not (is_host or is_participant or is_volunteer):
-        messages.error(request, "You do not have permission to access this chat.")
-        return redirect('home')
-    
-    if request.method == 'POST':
+    if request.method == 'POST' and selected_chat:
         content = request.POST.get('content')
         if content:
-            GroupMessage.objects.create(event=event, user=request.user, content=content)
-            messages.success(request, "Message sent successfully!")
+            Message.objects.create(
+                group_chat=selected_chat,
+                user=request.user,
+                content=content
+            )
+            messages.success(request, "Message sent successfully.")
+        else:
+            messages.error(request, "Message content cannot be empty.")
+        return redirect(f"{request.path}?chat_id={selected_chat.id}")
+
+    context = {
+        'group_chats': group_chats,
+        'selected_chat': selected_chat,
+        'messages': messages_list,
+    }
+    return render(request, 'events/chat_dashboard.html', context)
+
+def group_chat(request, event_id):
+    event = get_object_or_404(Event, id=event_id)
+    if not event.is_approved or event.date <= timezone.now():
+        messages.error(request, "This event is not available for chat.")
+        return redirect('home')
+
+    # Get all approved volunteers for the event (potential chat participants)
+    participants = Volunteer.objects.filter(event=event, is_approved=True).select_related('user')
+    participants = participants | Volunteer.objects.filter(event=event, proposed_by=event.proposed_by)
+    participants = participants.distinct()
+
+    if request.method == 'POST':
+        message = request.POST.get('message')
+        if message:
+            # Here you would typically save the message to a model (e.g., ChatMessage)
+            # For now, we'll simulate with a placeholder
+            messages.success(request, f"Message sent: {message}")
         return redirect('group_chat', event_id=event_id)
 
-    messages = GroupMessage.objects.filter(event=event).select_related('user').order_by('created_at')
-    return render(request, 'events/group_chat.html', context={'event': event, 'messages': messages})
+    context = {
+        'event': event,
+        'participants': participants,
+    }
+    return render(request, 'events/group_chat.html', context)

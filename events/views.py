@@ -1,23 +1,28 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.utils import timezone
+from datetime import timedelta
 from django.contrib import messages
 from django.db.models import Avg
 from django.core.exceptions import ValidationError
-from .models import (Event, EventView, EventParticipation, Volunteer, Rating, GroupChat,GroupChatMember, Message)
+
+from .models import (Event, EventView, EventParticipation, Volunteer,
+                     Venue, Rating, GroupChat,GroupChatMember, Message, Task)
+
 from .forms import EventProposalForm, VolunteerForm
-from .utils import allocate_venue
+from .utils import allocate_venue, suggest_task_assignments
 import json
+import calendar
 
 def home(request):
     upcoming_events = (
     Event.objects.filter(is_approved=True, end_date__gte=timezone.now()) |
     Event.objects.filter(is_approved=True, end_date__isnull=True, date__gte=timezone.now())
-        ).order_by('date').distinct()
+        ).order_by('date').distinct()[:3]
 
     past_events = (
     Event.objects.filter(is_approved=True, end_date__lt=timezone.now()) |
     Event.objects.filter(is_approved=True, end_date__isnull=True, date__lt=timezone.now())
-        ).order_by('-date').distinct()
+        ).order_by('-date').distinct()[:3]
 
     recommended_events = None
 
@@ -100,6 +105,96 @@ def home(request):
         'form': form,
     }
     return render(request, 'events/index.html', context)
+
+def all_events(request):
+    # Base query for upcoming events
+    upcoming_events = (
+        Event.objects.filter(is_approved=True, end_date__gte=timezone.now()) |
+        Event.objects.filter(is_approved=True, end_date__isnull=True, date__gte=timezone.now())
+    )
+    # Get filter parameters from the request
+    event_type = request.GET.get('event_type', '')
+    venue_id = request.GET.get('venue', '')
+    date_range = request.GET.get('date_range', '')
+
+    # Apply filters
+    if event_type and event_type != 'Event Type':
+        upcoming_events = upcoming_events.filter(event_type=event_type)
+
+    if venue_id and venue_id != '':
+        upcoming_events = upcoming_events.filter(venue_id=venue_id)
+    
+    if date_range:
+        today = timezone.now().date()
+        if date_range == 'today':
+            upcoming_events = upcoming_events.filter(date__date=today)
+        elif date_range == 'this_week':
+            end_of_week = today + timedelta(days=7 - today.weekday())
+            upcoming_events = upcoming_events.filter(date__date__range=[today, end_of_week])
+        elif date_range == 'this_month':
+            end_of_month = today.replace(day=calendar.monthrange(today.year, today.month)[1])
+            upcoming_events = upcoming_events.filter(date__date__range=[today, end_of_month])
+    
+    # Order by date and execute query
+    upcoming_events = upcoming_events.order_by('date').distinct()
+
+    # Get unique event types and venues for the dropdowns
+    event_types = Event.objects.values_list('event_type', flat=True).distinct()
+    venues = Venue.objects.values_list('id', 'name')
+
+    context = {
+        'upcoming_events': upcoming_events,
+        'event_types': event_types,
+        'venues': venues,
+        'selected_event_type': event_type,
+        'selected_venue_id': venue_id,
+        'selected_date_range': date_range,
+    }
+    return render(request, 'events/all_events.html', context)
+
+def all_past_events(request):
+    past_events = (
+        Event.objects.filter(is_approved=True, end_date__lt=timezone.now()) |
+        Event.objects.filter(is_approved=True, end_date__isnull=True, date__lt=timezone.now())
+    )
+    # Get filter parameters from the request
+    event_type = request.GET.get('event_type', '')
+    venue_id = request.GET.get('venue', '')
+    date_range = request.GET.get('date_range', '')
+
+    # Apply filters
+    if event_type and event_type != 'Event Type':
+        past_events = past_events.filter(event_type=event_type)
+
+    if venue_id and venue_id != '':
+        past_events = past_events.filter(venue_id=venue_id)
+
+    if date_range:
+        today = timezone.now().date()
+        if date_range == 'past_week':
+            start_of_week = today - timedelta(days=today.weekday() + 7)
+            past_events = past_events.filter(date__date__range=[start_of_week, today])
+        elif date_range == 'past_month':
+            start_of_month = today.replace(day=1) - timedelta(days=1)
+            start_of_month = start_of_month.replace(day=1)
+            past_events = past_events.filter(date__date__range=[start_of_month, today])
+
+    # Order by date (most recent first) and execute query
+    past_events = past_events.order_by('-date').distinct()
+
+    # Get unique event types and venues for the dropdowns
+    event_types = Event.objects.values_list('event_type', flat=True).distinct()
+    venues = Venue.objects.values_list('id', 'name')
+
+    context = {
+        'past_events': past_events,
+        'event_types': event_types,
+        'venues': venues,
+        'selected_event_type': event_type,
+        'selected_venue_id': venue_id,
+        'selected_date_range': date_range,
+    }
+    return render(request, 'events/all_past_events.html', context)
 
 def event_detail(request, event_id):
     event = get_object_or_404(Event, id=event_id, is_approved=True)
@@ -356,27 +451,80 @@ def chat_dashboard(request):
     }
     return render(request, 'events/chat_dashboard.html', context)
 
-def group_chat(request, event_id):
+def todo_view(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    if not event.is_approved or event.date <= timezone.now():
-        messages.error(request, "This event is not available for chat.")
+    if not event.is_approved:
+        messages.error(request, "This event is not approved for tasks.")
         return redirect('home')
 
-    # Get all approved volunteers for the event (potential chat participants)
-    participants = Volunteer.objects.filter(event=event, is_approved=True).select_related('user')
-    participants = participants | Volunteer.objects.filter(event=event, proposed_by=event.proposed_by)
-    participants = participants.distinct()
+    is_participant = Volunteer.objects.filter(event=event, user=request.user, is_approved=True).exists() or event.proposed_by == request.user
+    if not is_participant:
+        messages.error(request, "You are not a participant in this event.")
+        return redirect('home')
 
-    if request.method == 'POST':
-        message = request.POST.get('message')
-        if message:
-            # Here you would typically save the message to a model (e.g., ChatMessage)
-            # For now, we'll simulate with a placeholder
-            messages.success(request, f"Message sent: {message}")
-        return redirect('group_chat', event_id=event_id)
+    volunteers = Volunteer.objects.filter(event=event, is_approved=True)
+    tasks = Task.objects.filter(event=event)
+
+    is_host = (event.proposed_by == request.user)
+
+    if request.method == 'POST' and is_host and 'create_task' in request.POST:
+        description = request.POST.get('description')
+        Task.objects.create(event=event, description=description)
+        messages.success(request, "Task created successfully.")
+        return redirect('todo', event_id=event_id)
+
+    # Assign Volunteer (Host Only)
+    if request.method == 'POST' and is_host and 'assign_volunteer' in request.POST:
+        task_id = request.POST.get('task_id')
+        volunteer_id = request.POST.get('volunteer_id')
+        task = get_object_or_404(Task, id=task_id, event=event)
+        volunteer = get_object_or_404(Volunteer, id=volunteer_id, event=event)
+        task.volunteer = volunteer
+        task.save()
+        messages.success(request, "Volunteer assigned successfully.")
+        return redirect('todo', event_id=event_id)
+
+    # Edit Task (Host Only)
+    if request.method == 'POST' and is_host and 'edit_task' in request.POST:
+        task_id = request.POST.get('task_id')
+        description = request.POST.get('description')
+        task = get_object_or_404(Task, id=task_id, event=event)
+        task.description = description
+        task.save()
+        messages.success(request, "Task updated successfully.")
+        return redirect('todo', event_id=event_id)
+
+    # Delete Task (Host Only)
+    if request.method == 'POST' and is_host and 'delete_task' in request.POST:
+        task_id = request.POST.get('task_id')
+        task = get_object_or_404(Task, id=task_id, event=event)
+        task.delete()
+        messages.success(request, "Task deleted successfully.")
+        return redirect('todo', event_id=event_id)
+
+    # Update Task Status (Volunteer Only)
+    if request.method == 'POST' and 'update_status' in request.POST:
+        task_id = request.POST.get('task_id')
+        task = get_object_or_404(Task, id=task_id, event=event)
+        if task.volunteer and task.volunteer.user == request.user:
+            task.status = not task.status
+            task.save()
+            messages.success(request, "Task status updated.")
+        else:
+            messages.error(request, "You can only update your own tasks.")
+        return redirect('todo', event_id=event_id)
+
+    # Task Assignment Suggestions (Host Only)
+    task_suggestions = {}
+    if is_host:
+        task_suggestions = suggest_task_assignments(volunteers, tasks, event)
 
     context = {
         'event': event,
-        'participants': participants,
+        'volunteers': volunteers,
+        'tasks': tasks,
+        'is_host': is_host,
+        'is_participant': is_participant,
+        'task_suggestions': task_suggestions,
     }
-    return render(request, 'events/group_chat.html', context)
+    return render(request, 'events/todo.html', context)

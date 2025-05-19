@@ -1,7 +1,9 @@
 from django.contrib import admin
 from django.contrib import messages
-from .models import Event, Venue, EventParticipation, Volunteer, VenueBooking, Rating
+from .models import Event, Venue, EventParticipation, Volunteer, VenueBooking, Rating, Task
 from .utils import allocate_venue
+
+admin.site.register(Task)
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):

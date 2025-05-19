@@ -171,3 +171,13 @@ def notify_host_of_volunteer(sender, instance, created, **kwargs):
         host = event.proposed_by
         if host:
             pass
+
+class Task(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tasks')
+    volunteer = models.ForeignKey(Volunteer, on_delete=models.SET_NULL, related_name='tasks', null=True, blank=True)
+    description = models.TextField()
+    status = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.description} - {self.volunteer.user.username}"

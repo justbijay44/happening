@@ -1,0 +1,148 @@
+{% extends 'layout.html' %}
+{% load static %}
+{% block title %}{{ event.title }} Tasks - Happening{% endblock %}
+
+{% block navbar %}
+{% endblock %}
+
+{% block content %}
+<section class="container mx-auto p-4">
+    <h2 class="text-2xl font-bold mb-4">{{ event.title }} - Task Management</h2>
+
+    <!-- Task List -->
+    <div class="bg-white shadow-md rounded p-6 mb-4">
+        <h3 class="text-xl font-semibold mb-4">Tasks</h3>
+        {% if tasks %}
+        <table class="w-full border-collapse border border-gray-300">
+            <thead>
+                <tr class="bg-gray-200">
+                    <th class="border p-2">Volunteer</th>
+                    <th class="border p-2">Task</th>
+                    <th class="border p-2">Status</th>
+                    {% if is_host %}
+                    <th class="border p-2">Suggestion</th>
+                    {% endif %}
+                    {% if not is_host %}
+                    <th class="border p-2">Actions</th>
+                    {% endif %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for task in tasks %}
+                <tr>
+                    <td class="border p-2">
+                        {% if task.volunteer %}
+                        {{ task.volunteer.user.username }}
+                        {% else %}
+                        Unassigned
+                        {% endif %}
+                    </td>
+                    <td class="border p-2">{{ task.description }}</td>
+                    <td class="border p-2">{{ task.status|yesno:"Done,Pending" }}</td>
+                    {% if is_host %}
+                    <td class="border p-2">
+                        {% if not task.volunteer %}
+                        {% for suggested_task, volunteer in task_suggestions.items %}
+                        {% if suggested_task == task.description %}
+                        Suggested: {{ volunteer.user.username }}
+                        {% endif %}
+                        {% endfor %}
+                        {% else %}
+                        Assigned
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                    {% if not is_host %}
+                    <td class="border p-2">
+                        {% if task.volunteer and task.volunteer.user == request.user %}
+                        <form method="POST" class="inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="task_id" value="{{ task.id }}">
+                            <input type="hidden" name="update_status" value="1">
+                            <button type="submit" class="bg-blue-500 text-white p-1 rounded hover:bg-blue-600">
+                                {{ task.status|yesno:"Mark as Pending,Mark as Done" }}
+                            </button>
+                        </form>
+                        {% endif %}
+                    </td>
+                    {% endif %}
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="{% if is_host %}4{% else %}5{% endif %}" class="border p-2 text-center">No tasks
+                        assigned yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p>No tasks assigned yet.</p>
+        {% endif %}
+    </div>
+
+    <!-- Create Task Form (Host Only) -->
+    {% if is_host %}
+    <div class="bg-white shadow-md rounded p-6 mb-4">
+        <h3 class="text-xl font-semibold mb-4">Create New Task</h3>
+        <form method="POST" class="flex flex-col gap-4">
+            {% csrf_token %}
+            <input type="hidden" name="create_task" value="1">
+            <div>
+                <label for="description" class="block text-gray-700">Task Description:</label>
+                <input type="text" name="description" id="description" class="w-full p-2 border rounded"
+                    placeholder="e.g., Setup the stage" required>
+            </div>
+            <button type="submit" class="bg-purple-600 text-white p-2 rounded hover:bg-purple-700">Create Task</button>
+        </form>
+    </div>
+
+    <!-- Task Management (Host Only) -->
+    <div class="bg-white shadow-md rounded p-6">
+        <h3 class="text-xl font-semibold mb-4">Task Management</h3>
+        {% for task in tasks %}
+        <div class="mb-4 p-2 border rounded">
+            <p><strong>Task:</strong> {{ task.description }}</p>
+            <p><strong>Volunteer:</strong> {% if task.volunteer %}{{ task.volunteer.user.username }}{% else %}Unassigned{% endif %}</p>
+            {% if is_host %}
+            <!-- Assign Form -->
+            {% if not task.volunteer %}
+            <form method="POST" class="inline-block mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="task_id" value="{{ task.id }}">
+                <input type="hidden" name="assign_volunteer" value="1">
+                <select name="volunteer_id" class="p-1 border rounded">
+                    {% for volunteer in volunteers %}
+                    <option value="{{ volunteer.id }}">{{ volunteer.user.username }}</option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="bg-green-500 text-white p-1 rounded hover:bg-green-600">Assign</button>
+            </form>
+            {% endif %}
+            <!-- Edit Form -->
+            <form method="POST" class="inline-block mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="task_id" value="{{ task.id }}">
+                <input type="hidden" name="edit_task" value="1">
+                <input type="text" name="description" value="{{ task.description }}" class="p-1 border rounded w-full">
+                <button type="submit" class="bg-yellow-500 text-white p-1 rounded hover:bg-yellow-600">Save
+                    Edit</button>
+            </form>
+            <!-- Delete Form -->
+            <form method="POST" class="inline-block mt-2">
+                {% csrf_token %}
+                <input type="hidden" name="task_id" value="{{ task.id }}">
+                <input type="hidden" name="delete_task" value="1">
+                <button type="submit" class="bg-red-500 text-white p-1 rounded hover:bg-red-600">Delete</button>
+            </form>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="mt-4">
+        <a href="{% url 'chat_dashboard' %}?chat_id={{ event.group_chat.id }}"
+            class="text-blue-500 hover:text-blue-700">Back to Chat</a>
+    </div>
+</section>
+{% endblock %}

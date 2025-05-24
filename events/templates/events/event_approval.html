@@ -1,0 +1,70 @@
+{% extends 'layout.html' %}
+{% block title %}Event Approval - Happening{% endblock %}
+
+{% block navbar %}
+{% endblock %}
+{% block content %}
+<section class="container mx-auto p-4">
+    <h2 class="text-2xl font-bold mb-4">Pending Events for Approval</h2>
+    {% if messages %}
+    {% for message in messages %}
+    <div class="mb-4 p-2 {% if message.tags == 'error' %}bg-red-100{% else %}bg-green-100{% endif %} rounded">
+        {{ message }}
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    {% if pending_events %}
+    <table class="min-w-full bg-white shadow-md rounded">
+        <thead>
+            <tr>
+                <th class="py-2 px-4 border-b">Title</th>
+                <th class="py-2 px-4 border-b">Date</th>
+                <th class="py-2 px-4 border-b">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for event in pending_events %}
+            <tr>
+                <td class="py-2 px-4 border-b">{{ event.title }}</td>
+                <td class="py-2 px-4 border-b">{{ event.date|date:"Y-m-d H:i" }}</td>
+                <td class="py-2 px-4 border-b">
+                    {% if selected_event_id == event.id|stringformat:"s" and selected_action %}
+                    <!-- Step 2: Show reason input form -->
+                    <form method="post" action="{% url 'event_approval' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="event_id" value="{{ event.id }}">
+                        <input type="hidden" name="action" value="{{ selected_action }}">
+                        <input type="hidden" name="final_submit" value="true">
+                        {% if selected_action == 'approve' %}
+                        <label for="approval_reason_{{ event.id }}">Reason for Approval:</label>
+                        <input type="text" name="approval_reason" id="approval_reason_{{ event.id }}" class="border p-1 w-full" required>
+                        {% elif selected_action == 'reject' %}
+                        <label for="rejection_reason_{{ event.id }}">Reason for Rejection:</label>
+                        <input type="text" name="rejection_reason" id="rejection_reason_{{ event.id }}" class="border p-1 w-full" required>
+                        {% endif %}
+                        <button type="submit" class="bg-purple-600 text-white p-1 mt-2 rounded hover:bg-purple-700">Submit</button>
+                        <a href="{% url 'event_approval' %}" class="text-gray-600 ml-2">Cancel</a>
+                    </form>
+                    {% else %}
+                    <!-- Step 1: Select action -->
+                    <form method="post" action="{% url 'event_approval' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="event_id" value="{{ event.id }}">
+                        <select name="action" onchange="this.form.submit()">
+                            <option value="">Select Action</option>
+                            <option value="approve">Approve</option>
+                            <option value="reject">Reject</option>
+                        </select>
+                    </form>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p>No pending events.</p>
+    {% endif %}
+</section>
+{% endblock %}

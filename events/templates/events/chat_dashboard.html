@@ -1,87 +1,107 @@
 {% extends 'layout.html' %}
-
-{% block navbar %}
-{% endblock %}
-
+{% block title %}Chat Dashboard - Happening{% endblock %}
+{% block navbar %}{% endblock %}
 {% block content %}
-<section class="flex w-screen h-screen bg-gray-100">
+<section class="flex h-screen bg-gray-100">
     <!-- Sidebar -->
-    <div class="w-[30%] bg-white shadow-md p-4 overflow-y-auto">
-        <h2 class="text-[#2A07F9] text-xl font-bold mb-4">My Group Chats</h2>
-        {% if group_chats %}
-        <ul class="space-y-2">
+    <div id="sidebar" class="w-1/4 bg-white shadow-md p-4 transition-all duration-300 ease-in-out"
+         style="min-width: 250px;">
+        <h2 class="text-xl font-bold mb-4">Chats</h2>
+        <ul>
             {% for membership in group_chats %}
-            <li>
-                <a href="?chat_id={{ membership.group_chat.id }}"
-                   class="block px-4 py-2 text-[#2A07F9] rounded transition-colors duration-200 {% if selected_chat and selected_chat.id == membership.group_chat.id %}bg-[#2A07F9] text-white font-semibold{% else %}hover:bg-[#F2F4FF]{% endif %}">
-                    {{ membership.group_chat.event.title }} (Joined: {{ membership.joined_at|date:"F d, Y" }})
+            <li class="mb-2">
+                <a href="{% url 'chat_dashboard' %}?chat_id={{ membership.group_chat.id }}"
+                   class="block p-2 text-purple-600 hover:bg-purple-100 rounded {% if selected_chat and selected_chat.id == membership.group_chat.id %}bg-purple-200{% endif %}">
+                    {{ membership.group_chat.name }}
                 </a>
             </li>
+            {% empty %}
+            <li class="text-gray-500">No chats available.</li>
             {% endfor %}
         </ul>
-        {% else %}
-        <p class="text-gray-600">No group chats yet. Get accepted as a volunteer to start chatting!</p>
-        {% endif %}
-        <!-- Back to Home Link -->
-        <div class="mt-4">
-            <a href="{% url 'home' %}" class="block px-4 py-2 text-center bg-[#2306D1] hover:bg-[#2A07F9] text-white font-bold rounded focus:outline-none focus:shadow-outline">
-                Back to Home
-            </a>
-        </div>
     </div>
 
-    <!-- Main Content -->
-    <div class="w-[70%] p-6 flex flex-col overflow-y-auto">
-        <h2 class="text-3xl font-bold text-[#2A07F9]">Chat Dashboard</h2>
-
+    <!-- Main Message Section -->
+    <div id="main-content" class="flex-1 flex flex-col bg-white shadow-md ml-4 p-4 overflow-hidden"
+         style="display: {% if selected_chat %}block{% else %}none{% endif %};">
         {% if selected_chat %}
-        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 flex-1 flex flex-col min-h-0">
-            <h3 class="text-xl font-semibold text-gray-700 mb-4">{{ selected_chat.event.title }}</h3>
-
-            <!-- Task Bar -->
-            <div class="mb-4">
-                <a href="{% url 'todo' selected_chat.event.id %}" class="bg-blue-500 text-white p-2 rounded hover:bg-blue-600">View Tasks</a>
+        <h2 class="text-xl font-bold mb-4">{{ selected_chat.name }}</h2>
+        <div id="chat-messages" class="flex-1 overflow-y-auto p-2 border rounded mb-4"
+             style="max-height: 500px;">
+            {% for message in messages %}
+            <div class="mb-2 {% if message.user == request.user %}text-right{% endif %}">
+                <span class="inline-block p-2 rounded {% if message.user == request.user %}bg-purple-500 text-white{% else %}bg-gray-200{% endif %}">
+                    <strong>{{ message.user.username }}</strong> ({{ message.created_at|date:"Y-m-d H:i:s" }}): {{ message.content }}
+                </span>
             </div>
-            <!-- Messages -->
-            <div id="message-container" class="flex-1 overflow-y-auto mb-4 p-4 border rounded">
-                {% for message in messages %}
-                <div class="mb-4">
-                    <p class="text-sm text-gray-600">
-                        <strong>{{ message.user.username }}</strong> at {{ message.created_at|date:"F d, Y, g:iA" }}
-                    </p>
-                    <p class="text-gray-800">{{ message.content }}</p>
-                </div>
-                {% empty %}
-                <p class="text-gray-600">No messages yet. Start the conversation!</p>
-                {% endfor %}
-            </div>
-
-            <!-- Message Form -->
-            <form method="POST" class="flex flex-col gap-4">
-                {% csrf_token %}
-                <textarea name="content" rows="3" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="Type your message..." required></textarea>
-                <button type="submit" class="bg-[#2306D1] hover:bg-[#2A07F9] text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline">
-                    Send Message
-                </button>
-            </form>
+            {% empty %}
+            <p class="text-gray-500">No messages yet.</p>
+            {% endfor %}
+        </div>
+        <div class="flex gap-2">
+            <input type="text" id="chat-message-input" class="flex-1 p-2 border rounded" placeholder="Type a message...">
+            <button id="chat-message-submit" class="bg-purple-600 text-white p-2 rounded hover:bg-purple-700">Send</button>
         </div>
         {% else %}
-        <div class="bg-white shadow-md rounded px-8 pt-6 pb-8 flex-1">
-            <p class="text-gray-600">Select a chat from the sidebar to start messaging.</p>
-        </div>
+        <p class="text-gray-500">Select a chat to start messaging.</p>
         {% endif %}
     </div>
 </section>
 
-<!-- JavaScript to scroll to the bottom -->
+{% if ws_url %}
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const messageContainer = document.getElementById('message-container');
-        if (messageContainer) {
-            messageContainer.scrollTop = messageContainer.scrollHeight;
+    const chatSocket = new WebSocket('{{ ws_url }}');
+
+    function scrollToBottom() {
+        const messagesDiv = document.getElementById('chat-messages');
+        if (messagesDiv) {
+            requestAnimationFrame(() => {
+                messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            });
+        }
+    }
+
+    chatSocket.onopen = function(e) {};
+
+    chatSocket.onmessage = function(e) {
+        try {
+            const data = JSON.parse(e.data);
+            const messagesDiv = document.getElementById('chat-messages');
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('mb-2');
+            if (data.username === '{{ request.user.username }}') {
+                messageElement.classList.add('text-right');
+            }
+            messageElement.innerHTML = `<span class="inline-block p-2 rounded ${data.username === '{{ request.user.username }}' ? 'bg-purple-500 text-white' : 'bg-gray-200'}">
+                <strong>${data.username}</strong> (${data.created_at}): ${data.message}</span>`;
+            messagesDiv.appendChild(messageElement);
+            scrollToBottom();
+        } catch (error) {}
+    };
+
+    chatSocket.onclose = function(e) {};
+
+    chatSocket.onerror = function(e) {};
+
+    document.getElementById('chat-message-submit').onclick = function() {
+        const messageInput = document.getElementById('chat-message-input');
+        const message = messageInput.value.trim();
+        if (message) {
+            if (chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({ 'message': message }));
+            }
+            messageInput.value = '';
+        }
+    };
+
+    document.getElementById('chat-message-input').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') {
+            document.getElementById('chat-message-submit').click();
         }
     });
+
+    // Scroll to bottom on page load
+    window.addEventListener('DOMContentLoaded', scrollToBottom);
 </script>
-{% block footer %}
-{% endblock %}
+{% endif %}
 {% endblock %}

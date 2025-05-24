@@ -25,6 +25,12 @@ class Event(models.Model):
         ('program', 'Program'),
     ]
 
+    EVENT_STATUS = [
+        ('pending', 'Pending'),
+        ('approved', 'Approved'),
+        ('rejected', 'Rejected'),
+    ]
+
     title = models.CharField(max_length=200)
     image = models.ImageField(upload_to='event_images/', blank=True, null=True)
     description = models.TextField()
@@ -32,12 +38,13 @@ class Event(models.Model):
     end_date = models.DateTimeField(null=True, blank=True, help_text="End date/time of the event")
     venue = models.ForeignKey(Venue, on_delete=models.SET_NULL, null=True, blank=True)
     event_type = models.CharField(max_length=50, choices=EVENT_TYPES, default='program')
-    is_approved = models.BooleanField(default=False)
     is_highlight = models.BooleanField(default=False)
     proposed_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='proposed_events', null=True, blank=True)
     expected_attendees = models.IntegerField(default=0)
     email = models.EmailField(max_length=100, blank=True, default='')
     phone_number = models.CharField(max_length=10, blank=True, default='',validators=[RegexValidator(r'^\d{10}$', 'Enter a valid 10-digit phone number.')])
+    status = models.CharField(max_length=20, choices=EVENT_STATUS, default='pending')
+    rejection_reason = models.TextField(blank=True, null=True)
 
     def clean(self):
         if self.end_date and self.end_date < self.date:
@@ -52,6 +59,16 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+    
+class ApprovalHistory(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='approval_history')
+    action_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='approval_history')
+    action = models.CharField(max_length=50, choices=[('approve', 'Approve'), ('reject', 'Reject')])
+    action_date = models.DateTimeField(auto_now_add=True)
+    reason = models.TextField(blank=True, null=True, help_text="Reason for approval/rejection")
+
+    def __str__(self):
+        return f"{self.event.title} - {self.action} by {self.action_by.username} on {self.action_date}"
 
 class EventView(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='views')
@@ -163,14 +180,6 @@ class Message(models.Model):
 
     def __str__(self):
         return f"{self.user.username}: {self.content[:50]}"
-
-@receiver(post_save, sender=Volunteer)
-def notify_host_of_volunteer(sender, instance, created, **kwargs):
-    if created and not instance.is_approved:
-        event = instance.event
-        host = event.proposed_by
-        if host:
-            pass
 
 class Task(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='tasks')

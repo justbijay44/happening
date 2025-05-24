@@ -4,24 +4,66 @@ from datetime import timedelta
 from django.contrib import messages
 from django.db.models import Avg
 from django.core.exceptions import ValidationError
+from django.contrib.auth.decorators import login_required, user_passes_test
 
 from .models import (Event, EventView, EventParticipation, Volunteer,
-                     Venue, Rating, GroupChat,GroupChatMember, Message, Task)
+                     Venue, Rating, GroupChat,GroupChatMember, Message, Task, ApprovalHistory)
 
 from .forms import EventProposalForm, VolunteerForm
 from .utils import allocate_venue, suggest_task_assignments
+from django.core.mail import send_mail
 import json
 import calendar
 
+# Helper function for notification
+def send_approval_notification(event):
+    if event.status == 'approved':
+        subject = f"Event Approved: {event.title}"
+        message = (
+            f"Your event '{event.title}' has been approved.\n"
+            f"Date: {event.date.strftime('%Y-%m-%d %H:%M')}\n"
+            f"Expected Attendees: {event.expected_attendees}\n"
+            f"View details: http://127.0.0.1:8000/event/{event.id}/"  # Adjust URL as needed
+        )
+        try:
+            send_mail(
+                subject,
+                message,
+                'forgotit044@gmail.com',  # Replace with your email
+                [event.proposed_by.email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass  # Silent fail for simplicity
+
+def send_rejection_notification(event):
+    if event.status == 'rejected':
+        subject = f"Event Rejected: {event.title}"
+        message = (
+            f"Your event proposal '{event.title}' has been rejected.\n"
+            f"Reason: {event.rejection_reason or 'No reason provided.'}\n"
+            f"Please revise and resubmit if needed."
+        )
+        try:
+            send_mail(
+                subject,
+                message,
+                'forgotit044@gmail.com',  # Replace with your email
+                [event.proposed_by.email],
+                fail_silently=True,
+            )
+        except Exception:
+            pass  # Silent fail for simplicity
+
 def home(request):
     upcoming_events = (
-    Event.objects.filter(is_approved=True, end_date__gte=timezone.now()) |
-    Event.objects.filter(is_approved=True, end_date__isnull=True, date__gte=timezone.now())
+    Event.objects.filter(status='approved', end_date__gte=timezone.now()) |
+    Event.objects.filter(status='approved', end_date__isnull=True, date__gte=timezone.now())
         ).order_by('date').distinct()[:3]
 
     past_events = (
-    Event.objects.filter(is_approved=True, end_date__lt=timezone.now()) |
-    Event.objects.filter(is_approved=True, end_date__isnull=True, date__lt=timezone.now())
+    Event.objects.filter(status='approved', end_date__lt=timezone.now()) |
+    Event.objects.filter(status='approved', end_date__isnull=True, date__lt=timezone.now())
         ).order_by('-date').distinct()[:3]
 
     recommended_events = None
@@ -35,7 +77,7 @@ def home(request):
             if recommended_ids:
                 recommended_events = Event.objects.filter(
                     id__in=recommended_ids,
-                    is_approved=True,
+                    status='approved',
                     date__gte=timezone.now()
                 ).order_by('date')[:3]
         except (FileNotFoundError, json.JSONDecodeError):
@@ -50,7 +92,7 @@ def home(request):
                 if recommended_ids:
                     recommended_events = Event.objects.filter(
                         id__in=recommended_ids,
-                        is_approved=True,
+                        status='approved',
                         date__gte=timezone.now()
                     ).order_by('date')[:3]
             except (FileNotFoundError, json.JSONDecodeError):
@@ -63,14 +105,14 @@ def home(request):
                 event_types = set(viewed_events.values_list('event_type', flat=True))
                 recommended_events = Event.objects.filter(
                     event_type__in=event_types,
-                    is_approved=True,
+                    status='approved',
                     date__gte=timezone.now()
                 ).exclude(proposed_by=request.user).order_by('date')[:3]
 
         # Final fallback to highlighted events
         if not recommended_events or not recommended_events.exists():
             recommended_events = Event.objects.filter(
-                is_approved=True,
+                status='approved',
                 date__gte=timezone.now(),
                 is_highlight=True
             ).order_by('date')[:3]
@@ -84,16 +126,14 @@ def home(request):
         if form.is_valid():
             event = form.save(commit=False)
             event.proposed_by = request.user
+            event.status = 'pending'
             if request.user.is_superuser:
-                event.is_approved = True
+                event.status = 'approved'
             event.save()
-            if event.is_approved:
-                if allocate_venue(event):
-                    messages.success(request, f"Venue allocated for {event.title}.")
-                else:
-                    messages.warning(request, f"No suitable venue available for {event.title}.")
+            if event.status == 'approved' and allocate_venue(event):
+                messages.success(request, f"Venue allocated for {event.title}.")
             else:
-                messages.info(request, f"Event {event.title} submitted for approval.")
+                messages.info(request, f"Event {event.title} submitted for approval.") if not request.user.is_superuser else messages.warning(request, f"No suitable venue available for {event.title}.")
             return redirect('home')
     else:
         form = EventProposalForm()
@@ -106,11 +146,57 @@ def home(request):
     }
     return render(request, 'events/index.html', context)
 
+@login_required
+@user_passes_test(lambda u: u.is_superuser)
+def event_approval(request):
+    pending_events = Event.objects.filter(status='pending')
+
+    if request.method == 'POST':
+        event_id = request.POST.get('event_id')
+        action = request.POST.get('action')
+        event = get_object_or_404(Event, id=event_id)
+
+        # Step 1: Check if this is the final submission (with reason)
+        if 'final_submit' in request.POST:
+            if action == 'approve':
+                approval_reason = request.POST.get('approval_reason', '')
+                if not approval_reason:
+                    messages.error(request, "Please provide a reason for approving the event.")
+                    return redirect('event_approval')
+                event.status = 'approved'
+                ApprovalHistory.objects.create(event=event, action_by=request.user, action='approve', reason=approval_reason)
+                messages.success(request, f"Event '{event.title}' approved.")
+                send_approval_notification(event)
+            elif action == 'reject':
+                rejection_reason = request.POST.get('rejection_reason', '')
+                if not rejection_reason:
+                    messages.error(request, "Please provide a reason for rejecting the event.")
+                    return redirect('event_approval')
+                event.status = 'rejected'
+                event.rejection_reason = rejection_reason
+                ApprovalHistory.objects.create(event=event, action_by=request.user, action='reject', reason=rejection_reason)
+                messages.success(request, f"Event '{event.title}' rejected.")
+                send_rejection_notification(event)
+            
+            event.save()
+            return redirect('event_approval')
+
+    # Step 2: Pass the selected event and action to the template for reason input
+    selected_event_id = request.POST.get('event_id') if request.method == 'POST' else None
+    selected_action = request.POST.get('action') if request.method == 'POST' and 'final_submit' not in request.POST else None
+
+    context = {
+        'pending_events': pending_events,
+        'selected_event_id': selected_event_id,
+        'selected_action': selected_action,
+    }
+    return render(request, 'events/event_approval.html', context)
+
 def all_events(request):
     # Base query for upcoming events
     upcoming_events = (
-        Event.objects.filter(is_approved=True, end_date__gte=timezone.now()) |
-        Event.objects.filter(is_approved=True, end_date__isnull=True, date__gte=timezone.now())
+        Event.objects.filter(status='approved', end_date__gte=timezone.now()) |
+        Event.objects.filter(status='approved', end_date__isnull=True, date__gte=timezone.now())
     )
     # Get filter parameters from the request
     event_type = request.GET.get('event_type', '')
@@ -154,8 +240,8 @@ def all_events(request):
 
 def all_past_events(request):
     past_events = (
-        Event.objects.filter(is_approved=True, end_date__lt=timezone.now()) |
-        Event.objects.filter(is_approved=True, end_date__isnull=True, date__lt=timezone.now())
+        Event.objects.filter(status='approved', end_date__lt=timezone.now()) |
+        Event.objects.filter(status='approved', end_date__isnull=True, date__lt=timezone.now())
     )
     # Get filter parameters from the request
     event_type = request.GET.get('event_type', '')
@@ -197,7 +283,7 @@ def all_past_events(request):
     return render(request, 'events/all_past_events.html', context)
 
 def event_detail(request, event_id):
-    event = get_object_or_404(Event, id=event_id, is_approved=True)
+    event = get_object_or_404(Event, id=event_id, status='approved')
     going_count = EventParticipation.objects.filter(event=event, status='going').count()
     
     user_is_going = False
@@ -245,36 +331,19 @@ def mark_going(request, event_id):
     if not request.user.is_authenticated:
         return redirect('account_login')
     
-    event = get_object_or_404(Event, id=event_id, is_approved=True)
+    event = get_object_or_404(Event, id=event_id, status='approved')
     participation, created = EventParticipation.objects.get_or_create(
         event=event,
         user=request.user
     )
-    if created:
+    if created or participation.status != 'going':
         participation.status='going'
         participation.save()
         messages.success(request, f"You are now marked as going to {event.title}!")
     else:
-        #Toggle status
-        if participation.status == 'going':
-            participation.status = 'not_going'
-            participation.save()
-            messages.success(request, f"You are now marked as not going to {event.title}!")
-        else:
-            participation.status = 'going'
-            participation.save()
-            messages.success(request, f"You are now marked as going to {event.title}!")
-
-        return redirect('event_detail', event_id=event_id)
-
-    if not created and participation.status == 'not_going':
-        participation.status = 'going'
+        participation.status = 'not_going'
         participation.save()
-        messages.success(request, f"You are now marked as going to {event.title}!")
-    elif participation.status == 'going':
-        messages.info(request, f"You are already marked as going to {event.title}.")
-    else:
-        messages.success(request, f"You are now going to {event.title}!")
+        messages.success(request, f"You are now marked as not going to {event.title}!")
 
     return redirect('event_detail', event_id=event_id)
 
@@ -283,7 +352,7 @@ def volunteer_for_event(request, event_id):
         messages.error(request, "You must be logged in to volunteer.")
         return redirect('account_login')
 
-    event = get_object_or_404(Event, id=event_id, is_approved=True)
+    event = get_object_or_404(Event, id=event_id, status='approved')
     existing_volunteer = Volunteer.objects.filter(event=event, user=request.user).first()
 
     if request.method == 'POST':
@@ -341,7 +410,7 @@ def rate_event(request, event_id):
     if not request.user.is_authenticated:
         return redirect('account_login')
     
-    event = get_object_or_404(Event, id=event_id, is_approved=True)
+    event = get_object_or_404(Event, id=event_id, status='approved')
     # Check if event has ended
     end_time = event.end_date or event.date
     if end_time >= timezone.now():
@@ -371,7 +440,7 @@ def volunteer_management(request):
         return redirect('account_login')
 
     # Check if the user is a host of any approved events
-    hosted_events = Event.objects.filter(proposed_by=request.user, is_approved=True)
+    hosted_events = Event.objects.filter(proposed_by=request.user, status='approved')
     if not hosted_events.exists():
         messages.error(request, "You are not a host of any approved events.")
         return redirect('home')
@@ -401,7 +470,7 @@ def manage_volunteers(request, volunteer_id):
     event = volunteer.event
 
     # Ensure the user is the host of the event
-    if event.proposed_by != request.user or not event.is_approved:
+    if event.proposed_by != request.user or event.status != 'approved':
         messages.error(request, "You do not have permission to manage volunteers for this event.")
         return redirect('volunteer_management')
 
@@ -429,31 +498,23 @@ def chat_dashboard(request):
         if not selected_chat.memberships.filter(user=request.user).exists():
             messages.error(request, "You are not a member of this group chat.")
             return redirect('chat_dashboard')
+        
+        if selected_chat.event.status != 'approved':
+            messages.error(request, "This event is not approved for chat.")
+            return redirect('chat_dashboard')
         messages_list = selected_chat.messages.all().order_by('created_at')
-
-    if request.method == 'POST' and selected_chat:
-        content = request.POST.get('content')
-        if content:
-            Message.objects.create(
-                group_chat=selected_chat,
-                user=request.user,
-                content=content
-            )
-            messages.success(request, "Message sent successfully.")
-        else:
-            messages.error(request, "Message content cannot be empty.")
-        return redirect(f"{request.path}?chat_id={selected_chat.id}")
 
     context = {
         'group_chats': group_chats,
         'selected_chat': selected_chat,
         'messages': messages_list,
+        'ws_url': f'ws://127.0.0.1:8000/ws/group-chat/{selected_chat_id}/' if selected_chat_id else None,
     }
     return render(request, 'events/chat_dashboard.html', context)
 
 def todo_view(request, event_id):
     event = get_object_or_404(Event, id=event_id)
-    if not event.is_approved:
+    if event.status != 'approved':
         messages.error(request, "This event is not approved for tasks.")
         return redirect('home')
 

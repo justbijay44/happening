@@ -13,6 +13,7 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = ['*']
 
 INSTALLED_APPS = [
+    'daphne',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -27,6 +28,7 @@ INSTALLED_APPS = [
     'widget_tweaks',
     'tailwind',
     'theme',
+    'channels',
     #myapp
     'events',
     'users',
@@ -64,7 +66,17 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'happening.wsgi.application'
+# WSGI_APPLICATION = 'happening.wsgi.application'
+ASGI_APPLICATION = 'happening.asgi.application'
+
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+           "hosts": [('127.0.0.1', 6380)],
+        },
+    },
+}
 
 DATABASES = {
     'default': {

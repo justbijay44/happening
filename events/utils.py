@@ -72,17 +72,17 @@ def store_previous_state(sender, instance, **kwargs):
             instance._previous_attendees = previous.expected_attendees
             instance._previous_date = previous.date
             instance._previous_end_date = previous.end_date
-            instance._previous_approved = previous.is_approved
+            instance._previous_status = previous.status
         except Event.DoesNotExist:
             instance._previous_attendees = None
             instance._previous_date = None
             instance._previous_end_date = None
-            instance._previous_approved = None
+            instance._previous_status = None
     else:
         instance._previous_attendees = None
         instance._previous_date = None
         instance._previous_end_date = None
-        instance._previous_approved = None
+        instance._previous_status = None
 
 @receiver(post_save, sender=Event)
 def allocate_venue_on_approval_or_update(sender, instance, created, **kwargs):
@@ -94,9 +94,9 @@ def allocate_venue_on_approval_or_update(sender, instance, created, **kwargs):
     """
     # Auto-approve for superusers on creation
     if created and instance.proposed_by and instance.proposed_by.is_superuser:
-        if not instance.is_approved:
-            instance.is_approved = True
-            instance.save(update_fields=['is_approved'])
+        if not instance.status:
+            instance.status = True
+            instance.save(update_fields=['status'])
         allocate_venue(instance)
         return
 
@@ -107,10 +107,10 @@ def allocate_venue_on_approval_or_update(sender, instance, created, **kwargs):
         instance._previous_end_date != instance.end_date
     )
     approval_changed = (
-        instance._previous_approved is False and instance.is_approved is True
+        instance._previous_status is False and instance.status is True
     )
 
-    if instance.is_approved and (created or approval_changed or fields_changed):
+    if instance.status and (created or approval_changed or fields_changed):
         allocate_venue(instance)
 
 # Union-Find for Kruskal's MST

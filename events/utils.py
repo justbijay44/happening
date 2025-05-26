@@ -3,21 +3,41 @@ from django.dispatch import receiver
 from django.utils import timezone
 from datetime import timedelta
 from django.conf import settings
+
 from .models import Venue, VenueBooking, Event, EventParticipation, Task
 
+from math import radians, sin, cos, sqrt, atan2
+
+# ACEM College coordinates
+COLLEGE_LATITUDE = 27.6887106
+COLLEGE_LONGITUDE = 85.2897808
 
 DEFAULT_EVENT_DURATION = getattr(settings, 'DEFAULT_EVENT_DURATION', 4)  # Hours
 
-def allocate_venue(event):
+def calculate_distance(lat1, lon1, lat2, lon2):
+    """Calculate distance between two points using the Haversine formula (in km)."""
+    R = 6371  # Earth's radius in km
+    lat1, lon1, lat2, lon2 = map(radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = sin(dlat/2)**2 + cos(lat1) * cos(lat2) * sin(dlon/2)**2
+    c = 2 * atan2(sqrt(a), sqrt(1-a))
+    return R * c
 
+def allocate_venue(event):
     start_time = event.date
     end_time = event.end_date or event.date + timedelta(hours=DEFAULT_EVENT_DURATION)
 
     # Clear existing bookings to avoid duplicates
     VenueBooking.objects.filter(event=event).delete()
 
+    # Validate or handle manual venue assignment
+    if event.venue and event.venue.capacity < event.expected_attendees:
+        event.venue = None  # Clear invalid manual assignment
+        event.save(update_fields=['venue'])
+
     # Check manual assignment (if set and sufficient capacity)
-    if event.venue and event.venue.capacity >= event.expected_attendees:
+    if event.venue:
         conflicts = VenueBooking.objects.filter(
             venue=event.venue,
             start_time__lt=end_time,
@@ -33,27 +53,47 @@ def allocate_venue(event):
             return True
         # Manual venue unavailable; proceed to automatic allocation
 
-    # Automatic allocation (greedy: smallest suitable venue)
+    # Automatic allocation (greedy: optimize for capacity and distance)
     suitable_venues = Venue.objects.filter(
         capacity__gte=event.expected_attendees
-    ).order_by('capacity')
+    ).order_by('capacity')  # Start with smallest suitable capacity
+
+    best_venue = None
+    best_score = float('inf')
 
     for venue in suitable_venues:
+        # Check if venue is available (no overlapping bookings)
         conflicts = VenueBooking.objects.filter(
             venue=venue,
             start_time__lt=end_time,
             end_time__gt=start_time
         )
-        if not conflicts.exists():
-            VenueBooking.objects.create(
-                event=event,
-                venue=venue,
-                start_time=start_time,
-                end_time=end_time
-            )
-            event.venue = venue
-            event.save(update_fields=['venue'])
-            return True
+        if conflicts.exists() or not venue.latitude or not venue.longitude:
+            continue
+
+        # Calculate distance from college
+        distance = calculate_distance(COLLEGE_LATITUDE, COLLEGE_LONGITUDE, venue.latitude, venue.longitude)
+
+        # Calculate score
+        capacity_diff = venue.capacity - event.expected_attendees
+        score = (capacity_diff * 100) + (distance * 5)  # Prioritize capacity, then distance
+
+        if score < best_score:
+            best_score = score
+            best_venue = venue
+
+    if best_venue:
+        # Create a booking
+        booking = VenueBooking(
+            event=event,
+            venue=best_venue,
+            start_time=start_time,
+            end_time=end_time
+        )
+        booking.save()
+        event.venue = best_venue
+        event.save(update_fields=['venue'])
+        return True
 
     # No suitable venue; clear event.venue
     if event.venue:
@@ -64,7 +104,7 @@ def allocate_venue(event):
 @receiver(pre_save, sender=Event)
 def store_previous_state(sender, instance, **kwargs):
     """
-    Store previous values to detect changes in expected_attendees, date, or end_date.
+    Store previous values to detect changes in expected_attendees, date, end_date, or venue.
     """
     if instance.pk:
         try:
@@ -73,16 +113,19 @@ def store_previous_state(sender, instance, **kwargs):
             instance._previous_date = previous.date
             instance._previous_end_date = previous.end_date
             instance._previous_status = previous.status
+            instance._previous_venue = previous.venue
         except Event.DoesNotExist:
             instance._previous_attendees = None
             instance._previous_date = None
             instance._previous_end_date = None
             instance._previous_status = None
+            instance._previous_venue = None
     else:
         instance._previous_attendees = None
         instance._previous_date = None
         instance._previous_end_date = None
         instance._previous_status = None
+        instance._previous_venue = None
 
 @receiver(post_save, sender=Event)
 def allocate_venue_on_approval_or_update(sender, instance, created, **kwargs):
@@ -90,12 +133,12 @@ def allocate_venue_on_approval_or_update(sender, instance, created, **kwargs):
     Trigger venue allocation:
     - On creation by superuser (auto-approve).
     - On approval for regular users.
-    - On changes to expected_attendees, date, or end_date if approved.
+    - On changes to expected_attendees, date, end_date, or venue if approved.
     """
     # Auto-approve for superusers on creation
     if created and instance.proposed_by and instance.proposed_by.is_superuser:
         if not instance.status:
-            instance.status = True
+            instance.status = 'approved'  # Match EVENT_STATUS choices
             instance.save(update_fields=['status'])
         allocate_venue(instance)
         return
@@ -104,13 +147,14 @@ def allocate_venue_on_approval_or_update(sender, instance, created, **kwargs):
     fields_changed = (
         instance._previous_attendees != instance.expected_attendees or
         instance._previous_date != instance.date or
-        instance._previous_end_date != instance.end_date
+        instance._previous_end_date != instance.end_date or
+        instance._previous_venue != instance.venue
     )
     approval_changed = (
-        instance._previous_status is False and instance.status is True
+        instance._previous_status == 'pending' and instance.status == 'approved'
     )
 
-    if instance.status and (created or approval_changed or fields_changed):
+    if instance.status == 'approved' and (created or approval_changed or fields_changed):
         allocate_venue(instance)
 
 # Union-Find for Kruskal's MST

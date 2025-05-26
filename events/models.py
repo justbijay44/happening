@@ -9,8 +9,11 @@ from django.core.validators import RegexValidator
 
 class Venue(models.Model):
     name = models.CharField(max_length=200)
+    capacity = models.PositiveIntegerField(db_index=True)
     location = models.CharField(max_length=300, blank=True, help_text="General Location or Area")
-    capacity = models.IntegerField(db_index=True)
+    google_map_link = models.URLField(max_length=500, blank=True, help_text="Link to Google Maps location")
+    latitude = models.FloatField(null=True, blank=True)  # Parsed from URL
+    longitude = models.FloatField(null=True, blank=True)  # Parsed from URL
 
     def __str__(self):
         return self.name
@@ -18,7 +21,36 @@ class Venue(models.Model):
     class Meta:
         indexes = [models.Index(fields=['capacity'])]
 
+    def parse_coordinates(self):
+        import re
+
+        if self.google_map_link:
+            try:
+                # First, try @latitude,longitude (e.g., @27.6887106,85.2872059)
+                match = re.search(r'@(-?\d+\.\d+),(-?\d+\.\d+)', self.google_map_link)
+                if match:
+                    self.latitude = float(match.group(1))
+                    self.longitude = float(match.group(2))
+                    return
+                # Fallback: try q=latitude,longitude (e.g., q=27.6887106,85.2872059)
+                match = re.search(r'q=(-?\d+\.\d+),(-?\d+\.\d+)', self.google_map_link)
+                if match:
+                    self.latitude = float(match.group(1))
+                    self.longitude = float(match.group(2))
+            except Exception:
+                pass
+
+@receiver(post_save, sender=Venue)
+def parse_venue_coordinates(sender, instance, created, **kwargs):
+    if instance.google_map_link and (instance.latitude is None or instance.longitude is None):
+        instance.parse_coordinates()
+        Venue.objects.filter(pk=instance.pk).update(
+            latitude=instance.latitude,
+            longitude=instance.longitude
+        )
+
 class Event(models.Model):
+    
     EVENT_TYPES = [
         ('sports', 'Sports'),
         ('music', 'Music'),
@@ -59,6 +91,30 @@ class Event(models.Model):
 
     def __str__(self):
         return self.title
+
+class VenueBooking(models.Model):
+    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="venue_bookings")
+    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name="bookings")
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField()
+
+    def clean(self):
+        if self.end_time < self.start_time:
+            raise ValidationError("End time cannot be before start time.")
+        if self.event.venue and self.venue != self.event.venue:
+            raise ValidationError("Booking  venue must match event venue if set")
+        
+    def save(self, *args, **kwargs):
+        self.start_time = self.event.date
+        self.end_time = self.event.end_date or self.event.date
+        super().save(*args,**kwargs)
+
+    def __str__(self):
+        return f"{self.event.title} at {self.venue.name}"
+    
+    class Meta:
+        unique_together = ('venue', 'start_time', 'end_time')
+        indexes = [models.Index(fields=['venue', 'start_time', 'end_time'])]
     
 class ApprovalHistory(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='approval_history')
@@ -112,29 +168,6 @@ class Volunteer(models.Model):
     def __str__(self):
         return f"{self.user.username} is volunteering for {self.event.title} (Approved: {self.is_approved})"
     
-class VenueBooking(models.Model):
-    event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name="venue_bookings")
-    venue = models.ForeignKey(Venue, on_delete=models.CASCADE, related_name="bookings")
-    start_time = models.DateTimeField()
-    end_time = models.DateTimeField()
-
-    def clean(self):
-        if self.end_time < self.start_time:
-            raise ValidationError("End time cannot be before start time.")
-        if self.event.venue and self.venue != self.event.venue:
-            raise ValidationError("Booking  venue must match event venue if set")
-        
-    def save(self, *args, **kwargs):
-        self.start_time = self.event.date
-        self.end_time = self.event.end_date or self.event.date
-        super().save(*args,**kwargs)
-
-    def __str__(self):
-        return f"{self.event.title} at {self.venue.name}"
-    
-    class Meta:
-        unique_together = ('venue', 'start_time', 'end_time')
-        indexes = [models.Index(fields=['venue', 'start_time', 'end_time'])]
     
 class Rating(models.Model):
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='ratings')

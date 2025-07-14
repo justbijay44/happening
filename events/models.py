@@ -55,6 +55,7 @@ class Event(models.Model):
         ('sports', 'Sports'),
         ('music', 'Music'),
         ('program', 'Program'),
+        ('other', 'Other'),
     ]
 
     EVENT_STATUS = [
@@ -222,4 +223,6 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.description} - {self.volunteer.user.username}"
+            if self.volunteer and self.volunteer.user:
+                return f"{self.description} - {self.volunteer.user.username}"
+            return self.description

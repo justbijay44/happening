@@ -1,11 +1,12 @@
 from django.db.models.signals import pre_save, post_save
 from django.dispatch import receiver
 from django.utils import timezone
+from django.core.exceptions import ValidationError
+from django.db import transaction
 from datetime import timedelta
 from django.conf import settings
 
 from .models import Venue, VenueBooking, Event, EventParticipation, Task
-
 from math import radians, sin, cos, sqrt, atan2
 
 # ACEM College coordinates
@@ -28,78 +29,77 @@ def allocate_venue(event):
     start_time = event.date
     end_time = event.end_date or event.date + timedelta(hours=DEFAULT_EVENT_DURATION)
 
-    # Clear existing bookings to avoid duplicates
-    VenueBooking.objects.filter(event=event).delete()
-
     # Validate or handle manual venue assignment
     if event.venue and event.venue.capacity < event.expected_attendees:
-        event.venue = None  # Clear invalid manual assignment
-        event.save(update_fields=['venue'])
-
-    # Check manual assignment (if set and sufficient capacity)
-    if event.venue:
-        conflicts = VenueBooking.objects.filter(
-            venue=event.venue,
-            start_time__lt=end_time,
-            end_time__gt=start_time
-        )
-        if not conflicts.exists():
-            VenueBooking.objects.create(
-                event=event,
-                venue=event.venue,
-                start_time=start_time,
-                end_time=end_time
-            )
-            return True
-        # Manual venue unavailable; proceed to automatic allocation
-
-    # Automatic allocation (greedy: optimize for capacity and distance)
-    suitable_venues = Venue.objects.filter(
-        capacity__gte=event.expected_attendees
-    ).order_by('capacity')  # Start with smallest suitable capacity
-
-    best_venue = None
-    best_score = float('inf')
-
-    for venue in suitable_venues:
-        # Check if venue is available (no overlapping bookings)
-        conflicts = VenueBooking.objects.filter(
-            venue=venue,
-            start_time__lt=end_time,
-            end_time__gt=start_time
-        )
-        if conflicts.exists() or not venue.latitude or not venue.longitude:
-            continue
-
-        # Calculate distance from college
-        distance = calculate_distance(COLLEGE_LATITUDE, COLLEGE_LONGITUDE, venue.latitude, venue.longitude)
-
-        # Calculate score
-        capacity_diff = venue.capacity - event.expected_attendees
-        score = (capacity_diff * 100) + (distance * 5)  # Prioritize capacity, then distance
-
-        if score < best_score:
-            best_score = score
-            best_venue = venue
-
-    if best_venue:
-        # Create a booking
-        booking = VenueBooking(
-            event=event,
-            venue=best_venue,
-            start_time=start_time,
-            end_time=end_time
-        )
-        booking.save()
-        event.venue = best_venue
-        event.save(update_fields=['venue'])
-        return True
-
-    # No suitable venue; clear event.venue
-    if event.venue:
         event.venue = None
         event.save(update_fields=['venue'])
-    return False
+
+    with transaction.atomic():  
+        VenueBooking.objects.filter(event=event).delete()
+
+        # Check if current venue should be reconsidered due to overcapacity
+        reconsider_venue = False
+        if event.venue:
+            capacity_diff = event.venue.capacity - event.expected_attendees
+            overcapacity_threshold = event.expected_attendees * 0.2  # 20% overcapacity as threshold
+            if capacity_diff > overcapacity_threshold and capacity_diff > 10:  # Minimum 10 attendees difference
+                reconsider_venue = True
+
+        if event.venue and not reconsider_venue:
+            conflicts = VenueBooking.objects.filter(
+                venue=event.venue,
+                start_time__lt=end_time,
+                end_time__gt=start_time
+            ).exclude(event=event)  
+            if not conflicts.exists():
+                VenueBooking.objects.update_or_create(
+                    event=event,
+                    defaults={'venue': event.venue, 'start_time': start_time, 'end_time': end_time}
+                )
+                return True
+
+        suitable_venues = Venue.objects.filter(
+            capacity__gte=event.expected_attendees
+        ).order_by('capacity')  
+
+        best_venue = None
+        best_score = float('inf')
+
+        for venue in suitable_venues:
+            conflicts = VenueBooking.objects.filter(
+                venue=venue,
+                start_time__lt=end_time,
+                end_time__gt=start_time
+            ).exclude(event=event)
+            if conflicts.exists() or not venue.latitude or not venue.longitude:
+                continue
+
+            distance = calculate_distance(COLLEGE_LATITUDE, COLLEGE_LONGITUDE, venue.latitude, venue.longitude)
+
+            capacity_diff = venue.capacity - event.expected_attendees
+            # Penalize overcapacity more heavily (e.g., quadratic penalty)
+            capacity_penalty = capacity_diff ** 2 if capacity_diff > 0 else 0
+            score = capacity_penalty + (distance * 5)  # Prioritize minimizing overcapacity and distance
+
+            if score < best_score:
+                best_score = score
+                best_venue = venue
+
+        if best_venue:
+            # Update or create booking
+            VenueBooking.objects.update_or_create(
+                event=event,
+                defaults={'venue': best_venue, 'start_time': start_time, 'end_time': end_time}
+            )
+            event.venue = best_venue
+            event.save(update_fields=['venue'])
+            return True
+
+        # No suitable venue; clear event.venue
+        if event.venue:
+            event.venue = None
+            event.save(update_fields=['venue'])
+        return False
 
 @receiver(pre_save, sender=Event)
 def store_previous_state(sender, instance, **kwargs):

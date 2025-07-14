@@ -1,0 +1,58 @@
+{
+  "intents": [
+    {
+      "tag": "event_list",
+      "patterns": ["what events are this week", "show me this week's events", "events this week"],
+      "responses": ["Here are the events this week: [dynamic list]. Check /events/ for details!"],
+      "keywords": "events, week, list"
+    },
+    {
+      "tag": "event_today",
+      "patterns": ["what events are today", "today's events", "events today"],
+      "responses": ["Here are todays events: [dynamic list]. Check /events/ for details!"],
+      "keywords": "events, today, list"
+    },
+    {
+      "tag": "event_register",
+      "patterns": ["how do i register for an event", "register for event", "event signup"],
+      "responses": ["Visit /events/register/ to sign up for an event!"],
+      "keywords": "register, event, sign up"
+    },
+    {
+      "tag": "event_venue",
+      "patterns": ["where is the venue", "venue location", "where is event"],
+      "responses": ["Please specify the event to get the venue details. Check /events/ for a list!"],
+      "keywords": "venue, location, where"
+    },
+    {
+      "tag": "volunteer_signup",
+      "patterns": ["how do i volunteer", "volunteer for event", "sign up to volunteer"],
+      "responses": ["Visit /events/volunteer/ to sign up as a volunteer for college events!"],
+      "keywords": "volunteer, signup, help"
+    },
+    {
+      "tag": "participation_status",
+      "patterns": ["am i registered", "check my registration", "participation status"],
+      "responses": ["Log in and check your participation status at /events/my-participation/!"],
+      "keywords": "registered, status, participation"
+    },
+    {
+      "tag": "fallback",
+      "patterns": ["", "invalid", "unknown"],
+      "responses": ["I'm not sure I understand. Try asking differently about events!", "I don't understand. Try asking about events, venues, or registration!"],
+      "keywords": "fallback, help"
+    },
+    {
+      "tag": "event_details",
+      "patterns": ["tell me about {event}", "more details on {event}", "what about {event}"],
+      "responses": ["Here's what I found about {event}: {details}. Check /events/ for more!"],
+      "keywords": ""
+    },
+    {
+      "tag": "event_recommendations",
+      "patterns": ["recommend events", "suggest events for me", "what events should I join"],
+      "responses": ["Based on your interests, I recommend: {recommendations}. Visit /events/ to explore!"],
+      "keywords": ""
+    }
+  ]
+}

@@ -10,7 +10,18 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = ['*']
+CSRF_TRUSTED_ORIGINS = [
+    'https://fc42c930c779.ngrok-free.app',
+    'https://8376d9c667a6.ngrok-free.app',
+]
+
+ALLOWED_HOSTS = [
+    '127.0.0.1',
+    'localhost',
+    'fc42c930c779.ngrok-free.app',
+    '8376d9c667a6.ngrok-free.app',
+]
+
 
 INSTALLED_APPS = [
     'daphne',
@@ -25,13 +36,14 @@ INSTALLED_APPS = [
     'allauth',
     'allauth.account',
     'allauth.socialaccount',
-    'widget_tweaks',
     'tailwind',
     'theme',
     'channels',
+    'widget_tweaks',
     #myapp
     'events',
     'users',
+    'chatbot',
 ]
 
 TAILWIND_APP_NAME = 'theme'
@@ -143,3 +155,20 @@ MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'  # or set to an absolute path
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+# Celery configuration
+CELERY_BROKER_URL = 'redis://localhost:6380/0'
+CELERY_RESULT_BACKEND = 'redis://localhost:6380/0'
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+
+# Celery Beat schedule
+CELERY_BEAT_SCHEDULE = {
+    'compute-recommendations': {
+        'task': 'events.management.commands.compute_recommendations.compute_recommendations',
+        'schedule': 600.0,  # Run every hour (in seconds)
+        'options': {'queue': 'default'},
+    },
+}
+CELERY_TIMEZONE = 'Asia/Kathmandu'

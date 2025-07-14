@@ -1,0 +1,46 @@
+<!-- HAPPENING/chatbot/templates/chatbot/index.html -->
+<div id="chatbot">
+    <input type="text" id="chat-input" placeholder="Ask about college events...">
+    <button onclick="sendQuery()">Send</button>
+    <div id="chat-response"></div>
+</div>
+<script>
+    // Get CSRF token from the cookie
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    const csrftoken = getCookie('csrftoken');
+
+    async function sendQuery() {
+        const input = document.getElementById("chat-input").value;
+        const responseDiv = document.getElementById("chat-response");
+        try {
+            const res = await fetch('/chatbot/chat/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFToken': csrftoken  // Add CSRF token
+                },
+                body: 'message=' + encodeURIComponent(input)
+            });
+            if (!res.ok) {
+                throw new Error(`HTTP error! Status: ${res.status}`);
+            }
+            const data = await res.json();
+            responseDiv.innerHTML += `<p>${data.response} <small>(${data.timestamp})</small></p>`;
+        } catch (error) {
+            responseDiv.innerHTML += `<p>Error: ${error.message}</p>`;
+        }
+    }
+</script>

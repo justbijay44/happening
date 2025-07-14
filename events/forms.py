@@ -4,13 +4,18 @@ from .models import Event, Volunteer
 class EventProposalForm(forms.ModelForm):
     class Meta:
         model = Event
-        fields = ['title', 'image', 'description', 'date', 'expected_attendees','event_type']
+        fields = ['title', 'image', 'description', 'date', 'end_date', 'event_type', 'expected_attendees', 'email', 'phone_number']
         widgets = {
-            'date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+            'date': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
+            'end_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}, format='%Y-%m-%dT%H:%M'),
+            'event_type': forms.Select(choices=Event.EVENT_TYPES),
         }
 
-    email = forms.EmailField(required=False, label='Email')
-    phone_number = forms.CharField(max_length=10, required=False, label='Phone Number')
+    def clean(self):
+        cleaned_data = super().clean()
+        if cleaned_data.get('end_date') and cleaned_data.get('date') and cleaned_data['end_date'] < cleaned_data['date']:
+            raise forms.ValidationError("End date cannot be before start date.")
+        return cleaned_data
 
 class VolunteerForm(forms.ModelForm):
     class Meta:

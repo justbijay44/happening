@@ -1,74 +1,86 @@
+{% load widget_tweaks %}
 <section class="py-16 bg-gradient-hero text-white">
     <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <h2 class="text-4xl text-[#2A07F9] font-bold text-center mb-5">Propose a New Event</h2>
         <p class="text-sm text-gray-600 mt-4 mb-5 text-center">
-            Once an event is proposed, our team will review it within 2-3 days. In the meantime, please stay tuned. If
-            your event is accepted, you'll be notified via the email and phone number you provided.
+            Once an event is proposed, our team will review it within 2-3 days. In the meantime, please stay tuned. If your event is accepted, you'll be notified via the email and phone number you provided.
         </p>
-        <form method="POST" enctype="multipart/form-data"
-            class="bg-white text-gray-800 p-8 rounded-xl shadow-lg space-y-6">
+        <form method="POST" enctype="multipart/form-data" class="bg-white text-gray-800 p-8 rounded-xl shadow-lg space-y-6">
             {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="mb-4 p-2 bg-red-100 text-red-700 rounded">
+                {{ form.non_field_errors }}
+            </div>
+            {% endif %}
             <!-- Title -->
             <div>
-                <label for="id_title" class="block text-gray-700 font-semibold mb-2">Event Title</label>
-                <input type="text" name="title" id="id_title"
-                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    required>
+                <label for="{{ form.title.id_for_label }}" class="block text-gray-700 font-semibold mb-2">Event Title</label>
+                {{ form.title|add_class:"w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600" }}
+                {% if form.title.errors %}
+                <span class="text-red-500 text-sm">{{ form.title.errors|first }}</span>
+                {% endif %}
             </div>
             <!-- Image -->
             <div>
-                <label for="id_image" class="block text-gray-700 font-semibold mb-2">Event Image</label>
-                <input type="file" name="image" id="id_image"
-                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600">
+                <label for="{{ form.image.id_for_label }}" class="block text-gray-700 font-semibold mb-2">Event Image</label>
+                {{ form.image|add_class:"w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600" }}
             </div>
             <!-- Description -->
             <div>
-                <label for="id_description" class="block text-gray-700 font-semibold mb-2">Description</label>
-                <textarea name="description" id="id_description" rows="4"
-                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    required></textarea>
+                <label for="{{ form.description.id_for_label }}" class="block text-gray-700 font-semibold mb-2">Description</label>
+                {{ form.description|add_class:"w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600" }}
+                {% if form.description.errors %}
+                <span class="text-red-500 text-sm">{{ form.description.errors|first }}</span>
+                {% endif %}
             </div>
             <!-- Expected Attendees -->
             <div>
-                <label for="id_expected_attendees" class="block text-gray-700 font-semibold mb-2">Expected Attendees</label>
-                <input type="number" name="expected_attendees" id="id_expected_attendees"
-                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    required>
+                <label for="{{ form.expected_attendees.id_for_label }}" class="block text-gray-700 font-semibold mb-2">Expected Attendees</label>
+                {{ form.expected_attendees|add_class:"w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600" }}
+                {% if form.expected_attendees.errors %}
+                <span class="text-red-500 text-sm">{{ form.expected_attendees.errors|first }}</span>
+                {% endif %}
             </div>
             <!-- Date -->
             <div>
-                <label for="id_date" class="block text-gray-700 font-semibold mb-2">Date and Time</label>
-                <input type="datetime-local" name="date" id="id_date"
-                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    required>
+                <label for="{{ form.date.id_for_label }}" class="block text-gray-700 font-semibold mb-2">Date and Time</label>
+                {{ form.date|add_class:"w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600" }}
+                {% if form.date.errors %}
+                <span class="text-red-500 text-sm">{{ form.date.errors|first }}</span>
+                {% endif %}
+            </div>
+            <!-- End Date -->
+            <div>
+                <label for="{{ form.end_date.id_for_label }}" class="block text-gray-700 font-semibold mb-2">End Date and Time (Optional)</label>
+                {{ form.end_date|add_class:"w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600" }}
+                {% if form.end_date.errors %}
+                <span class="text-red-500 text-sm">{{ form.end_date.errors|first }}</span>
+                {% endif %}
             </div>
             <!-- Event Type -->
             <div>
-                <label for="id_event_type" class="block text-gray-700 font-semibold mb-2">Event Type</label>
-                <select name="event_type" id="id_event_type"
-                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    required>
-                    <option value="sports">Sports</option>
-                    <option value="music">Music</option>
-                    <option value="program">Program</option>
-                </select>
+                <label for="{{ form.event_type.id_for_label }}" class="block text-gray-700 font-semibold mb-2">Event Type</label>
+                {{ form.event_type|add_class:"w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600" }}
             </div>
             {% if not user.is_staff %}
             <div>
-                <label for="id_email" class="block text-gray-700 font-semibold mb-2">Email</label>
-                <input type="email" name="email" id="id_email" value="" 
-                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600" required>
+                <label for="{{ form.email.id_for_label }}" class="block text-gray-700 font-semibold mb-2">Email</label>
+                {{ form.email|add_class:"w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600" }}
+                {% if form.email.errors %}
+                <span class="text-red-500 text-sm">{{ form.email.errors|first }}</span>
+                {% endif %}
             </div>
             <div>
-                <label for="id_phone_number" class="block text-gray-700 font-semibold mb-2">Phone Number</label>
-                <input type="text" name="phone_number" id="id_phone_number" value="" 
-                    class="w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600" required>
+                <label for="{{ form.phone_number.id_for_label }}" class="block text-gray-700 font-semibold mb-2">Phone Number</label>
+                {{ form.phone_number|add_class:"w-full p-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-600" }}
+                {% if form.phone_number.errors %}
+                <span class="text-red-500 text-sm">{{ form.phone_number.errors|first }}</span>
+                {% endif %}
             </div>
             {% endif %}
             <!-- Submit Button -->
             <div class="text-center">
-                <button type="submit"
-                    class="bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition duration-300">
+                <button type="submit" class="bg-blue-600 text-white px-8 py-3 rounded-full font-semibold hover:bg-blue-700 transition duration-300">
                     Submit Proposal
                 </button>
             </div>

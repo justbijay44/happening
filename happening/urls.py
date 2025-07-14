@@ -8,6 +8,7 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('', include('events.urls')),
     path('users/', include('users.urls')),
+    path('chatbot/', include('chatbot.urls')),
 ]
 
 if settings.DEBUG:

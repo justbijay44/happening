@@ -83,4 +83,180 @@
 <!-- Purpose Form -->
 {% include 'events/event_proposed.html' %}
 
+<!-- Chatbot Icon and Window -->
+<div class="chatbot-icon" onclick="toggleChat()">
+    <img src="{% static 'images/chat-icon.png' %}" alt="Chat with us" class="w-10 h-10 object-contain">
+</div>
+<div id="chat-window" class="hidden">
+    <div class="chat-header flex justify-between items-center p-3 bg-purple-600 text-white">
+        <span>HAPPENING Chat</span>
+        <button onclick="closeChat()" class="text-white font-bold text-xl">×</button>
+    </div>
+    <div id="chat-messages" class="p-4 bg-white h-96 overflow-y-auto flex flex-col space-y-2">
+        <div class="bot-message p-2 bg-purple-100 rounded-lg shadow">
+            <span class="text-gray-800">Hello! How can I assist you with college events today?</span>
+            <span class="text-xs text-gray-500 block mt-1">11:28 AM</span>
+        </div>
+    </div>
+    <div id="chat-input" class="p-2 bg-gray-100 flex border-t border-gray-300">
+        <input type="text" id="chat-input-field" class="flex-grow p-2 border border-gray-300 rounded-l focus:outline-none focus:ring-2 focus:ring-purple-600"
+            placeholder="Ask about events...">
+        <button onclick="sendMessage()"
+            class="bg-purple-600 text-white p-2 rounded-r hover:bg-purple-700 transition flex items-center justify-center w-20">
+            Send
+        </button>
+    </div>
+</div>
+
+<script>
+    function toggleChat() {
+        const chatWindow = document.getElementById('chat-window');
+        chatWindow.classList.toggle('hidden');
+    }
+
+    function closeChat() {
+        const chatWindow = document.getElementById('chat-window');
+        chatWindow.classList.add('hidden');
+    }
+
+    async function sendMessage() {
+        const input = document.getElementById('chat-input-field').value;
+        if (!input) return;
+        const messages = document.getElementById('chat-messages');
+        const now = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        messages.innerHTML += `
+            <div class="user-message p-2 bg-gray-200 rounded-lg shadow self-end">
+                <span class="text-gray-800">${input}</span>
+                <span class="text-xs text-gray-500 block mt-1">${now}</span>
+            </div>
+        `;
+        messages.scrollTop = messages.scrollHeight; // Scroll to the latest message
+        document.getElementById('chat-input-field').value = '';
+
+        const res = await fetch('/chatbot/chat/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: 'message=' + encodeURIComponent(input)
+        });
+        if (!res.ok) throw new Error(`HTTP error! Status: ${res.status}`);
+        const data = await res.json();
+        const botTime = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        messages.innerHTML += `
+            <div class="bot-message p-2 bg-purple-100 rounded-lg shadow">
+                <span class="text-gray-800">${data.response}</span>
+                <span class="text-xs text-gray-500 block mt-1">${botTime}</span>
+            </div>
+        `;
+        messages.scrollTop = messages.scrollHeight; // Scroll to the latest message
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+
+<style>
+    .chatbot-icon {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: #4a15ec;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .chatbot-icon:hover {
+        transform: scale(1.1);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+    }
+    .chatbot-icon img {
+        width: 40px;
+        height: 40px;
+    }
+    #chat-window {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 350px;
+        max-height: 600px;
+        border-radius: 8px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+    }
+    #chat-window.hidden {
+        display: none;
+    }
+    .chat-header {
+        padding: 10px;
+        font-size: 1.1em;
+        border-top-left-radius: 8px;
+        border-top-right-radius: 8px;
+    }
+    .chat-header button {
+        background: none;
+        border: none;
+        cursor: pointer;
+    }
+    #chat-messages {
+        flex-grow: 1;
+        padding: 10px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 25px;
+    }
+    .bot-message {
+        max-width: 70%;
+        align-self: flex-start;
+    }
+    .user-message {
+        max-width: 70%;
+        align-self: flex-end;
+    }
+    .bot-message, .user-message {
+        padding: 8px 12px;
+        border-radius: 10px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+    #chat-input {
+        display: flex;
+        padding: 8px;
+    }
+    #chat-input input {
+        flex-grow: 1;
+        padding: 8px;
+        border: none;
+        outline: none;
+        border-radius: 5px 0 0 5px;
+    }
+    #chat-input button {
+        padding: 8px 15px;
+        border: none;
+        border-radius: 0 5px 5px 0;
+    }
+</style>
+
 {% endblock %}

@@ -10,10 +10,14 @@
         <ul>
             {% for membership in group_chats %}
             <li class="mb-2">
-                <a href="{% url 'chat_dashboard' %}?chat_id={{ membership.group_chat.id }}"
-                   class="block p-2 text-purple-600 hover:bg-purple-100 rounded {% if selected_chat and selected_chat.id == membership.group_chat.id %}bg-purple-200{% endif %}">
-                    {{ membership.group_chat.name }}
-                </a>
+                <div class="flex justify-between items-center">
+                    <a href="{% url 'chat_dashboard' %}?chat_id={{ membership.group_chat.id }}"
+                       class="block p-2 text-purple-600 hover:bg-purple-100 rounded {% if selected_chat and selected_chat.id == membership.group_chat.id %}bg-purple-200{% endif %}">
+                        {{ membership.group_chat.name }}
+                    </a>
+                    <a href="{% url 'todo' membership.group_chat.event.id %}"
+                       class="text-blue-500 hover:text-blue-700 ml-2">See Tasks</a>
+                </div>
             </li>
             {% empty %}
             <li class="text-gray-500">No chats available.</li>
@@ -88,7 +92,7 @@
         const message = messageInput.value.trim();
         if (message) {
             if (chatSocket.readyState === WebSocket.OPEN) {
-                chatSocket.send(JSON.stringify({ 'message': message }));
+                chatSocket.send(JSON.stringify({'message': message}));
             }
             messageInput.value = '';
         }

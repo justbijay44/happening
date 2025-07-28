@@ -12,14 +12,14 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 CSRF_TRUSTED_ORIGINS = [
     'https://fc42c930c779.ngrok-free.app',
-    'https://8376d9c667a6.ngrok-free.app',
+    'https://bd7eea6328fe.ngrok-free.app',
 ]
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
     'fc42c930c779.ngrok-free.app',
-    '8376d9c667a6.ngrok-free.app',
+    'bd7eea6328fe.ngrok-free.app',
 ]
 
 
@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'theme',
     'channels',
     'widget_tweaks',
+    'rest_framework',
     #myapp
     'events',
     'users',
@@ -80,6 +81,16 @@ TEMPLATES = [
 
 # WSGI_APPLICATION = 'happening.wsgi.application'
 ASGI_APPLICATION = 'happening.asgi.application'
+
+CACHES = {
+    'default': {
+        'BACKEND': 'django_redis.cache.RedisCache',
+        'LOCATION': 'redis://127.0.0.1:6380/1',
+        'OPTIONS': {
+            'CLIENT_CLASS': 'django_redis.client.DefaultClient',
+        }
+    }
+}
 
 CHANNEL_LAYERS = {
     'default': {
@@ -156,19 +167,16 @@ MEDIA_ROOT = BASE_DIR / 'media'  # or set to an absolute path
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Celery configuration
-CELERY_BROKER_URL = 'redis://localhost:6380/0'
-CELERY_RESULT_BACKEND = 'redis://localhost:6380/0'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-
-# Celery Beat schedule
-CELERY_BEAT_SCHEDULE = {
-    'compute-recommendations': {
-        'task': 'events.management.commands.compute_recommendations.compute_recommendations',
-        'schedule': 600.0,  # Run every hour (in seconds)
-        'options': {'queue': 'default'},
-    },
-}
-CELERY_TIMEZONE = 'Asia/Kathmandu'
+# LOGGING = {
+#     'version': 1,
+#     'disable_existing_loggers': False,
+#     'handlers': {
+#         'console': {
+#             'class': 'logging.StreamHandler',
+#         },
+#     },
+#     'root': {
+#         'handlers': ['console'],
+#         'level': 'DEBUG',
+#     },
+# }

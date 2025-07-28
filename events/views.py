@@ -12,8 +12,20 @@ from .models import (Event, EventView, EventParticipation, Volunteer,
 from .forms import EventProposalForm, VolunteerForm
 from .utils import allocate_venue, suggest_task_assignments
 from django.core.mail import send_mail
+
+from django.conf import settings
+
+from .myutils.ml_recommendations import predict_recommendations, save_user_preference
+from .myutils.question_tree import question_tree, get_recommendations, get_fallback_recommendations
+
 import json
 import calendar
+import random
+import os
+import pandas as pd
+import logging
+
+from django.http import HttpResponseRedirect
 
 # Helper function for notification
 def send_approval_notification(event):
@@ -57,14 +69,14 @@ def send_rejection_notification(event):
 
 def home(request):
     upcoming_events = (
-    Event.objects.filter(status='approved', end_date__gte=timezone.now()) |
-    Event.objects.filter(status='approved', end_date__isnull=True, date__gte=timezone.now())
-        ).order_by('date').distinct()[:3]
+        Event.objects.filter(status='approved', end_date__gte=timezone.now()) |
+        Event.objects.filter(status='approved', end_date__isnull=True, date__gte=timezone.now())
+    ).order_by('date').distinct()[:3]
 
     past_events = (
-    Event.objects.filter(status='approved', end_date__lt=timezone.now()) |
-    Event.objects.filter(status='approved', end_date__isnull=True, date__lt=timezone.now())
-        ).order_by('-date').distinct()[:3]
+        Event.objects.filter(status='approved', end_date__lt=timezone.now()) |
+        Event.objects.filter(status='approved', end_date__isnull=True, date__lt=timezone.now())
+    ).order_by('-date').distinct()[:3]
 
     recommended_events = None
 
@@ -117,6 +129,21 @@ def home(request):
                 is_highlight=True
             ).order_by('date')[:3]
 
+    # Recommendations for event proposal (from quiz or default ML)
+    event_recommendations = request.session.get('event_recommendations', None)
+    if not event_recommendations:
+        # Default ML prediction if no quiz data
+        default_input = {
+            'Year': 1,  # Default year
+            'Department': 'Computer',  # Default department
+            'Vibe': 'Creative',  # Default vibe
+            'Likes_Competition': 0,  # Default to non-competitive
+            'Prefers_Group': 1,  # Default to group-friendly
+            'Budget_Pref': 'Budget',  # Default budget
+            'Interest_Area': 'Arts'  # Default interest
+        }
+        event_recommendations = predict_recommendations(default_input)
+
     # Form handling
     if request.method == 'POST':
         if not request.user.is_authenticated:
@@ -133,7 +160,7 @@ def home(request):
             if event.status == 'approved' and allocate_venue(event):
                 messages.success(request, f"Venue allocated for {event.title}.")
             else:
-                messages.info(request, f"Event {event.title} submitted for approval.") if not request.user.is_superuser else messages.warning(request, f"No suitable venue available for {event.title}.")
+                messages.info(request, f"Event {event.title} submitted for approval.") if not request.user.is_superuser else messages.warning(f"No suitable venue available for {event.title}.")
             return redirect('home')
     else:
         form = EventProposalForm()
@@ -142,6 +169,7 @@ def home(request):
         'upcoming_events': upcoming_events,
         'past_events': past_events,
         'recommended_events': recommended_events,
+        'event_recommendations': event_recommendations,
         'form': form,
     }
     return render(request, 'events/index.html', context)
@@ -589,3 +617,212 @@ def todo_view(request, event_id):
         'task_suggestions': task_suggestions,
     }
     return render(request, 'events/todo.html', context)
+
+
+logger = logging.getLogger(__name__)
+
+def event_quiz(request):
+    """Handle the interactive quiz for event recommendations"""
+    
+    # Reset quiz only on initial GET request to /quiz/
+    if request.method == 'GET' and not request.session.get('quiz_answers') and request.path_info == '/quiz/':
+        request.session.flush()
+        request.session['quiz_answers'] = {}
+        request.session['current_question'] = 'year'
+        logger.info("Quiz session reset - starting fresh")
+
+    # Get current state
+    answers = request.session.get('quiz_answers', {})
+    current_question = request.session.get('current_question', 'year')
+    
+    logger.info(f"Current question: {current_question}, Answers so far: {answers}")
+
+    if request.method == 'POST':
+        try:
+            # Handle final event selection
+            if 'selection' in request.POST:
+                selected_event = request.POST.get('selection')
+                logger.info(f"User selected event: {selected_event}")
+                
+                if selected_event and answers:
+                    # Get user input for ML model
+                    user_input = get_recommendations(answers)
+                    
+                    # Save user preference to CSV
+                    try:
+                        save_user_preference(user_input, selected_event)
+                        messages.success(request, "Thank you! Your preference has been saved and will help improve our recommendations.")
+                    except Exception as e:
+                        logger.error(f"Error saving preference: {str(e)}")
+                        messages.error(request, "There was an issue saving your preference, but your selection was recorded.")
+                    
+                    # Clear session
+                    if 'quiz_answers' in request.session:
+                        del request.session['quiz_answers']
+                    if 'current_question' in request.session:
+                        del request.session['current_question']
+                    if 'event_recommendations' in request.session:
+                        del request.session['event_recommendations']
+                    
+                    return render(request, 'events/thank_you.html', {
+                        'selected_event': selected_event
+                    })
+
+            # Handle quiz navigation
+            current_node = question_tree.get(current_question, {})
+            submitted_value = request.POST.get(current_question)
+            
+            logger.info(f"Processing question: {current_question}, Submitted value: {submitted_value}")
+            
+            if submitted_value is not None:
+                # Validate the submitted value
+                options = current_node.get('options', [])
+                
+                # Convert submitted value to appropriate type
+                if options and isinstance(options[0], int):
+                    try:
+                        submitted_value = int(submitted_value)
+                    except (ValueError, TypeError):
+                        logger.warning(f"Could not convert {submitted_value} to int")
+                        return redirect('event_quiz')
+                
+                # Check if value is valid
+                if str(submitted_value) in [str(opt) for opt in options]:
+                    # Save the answer
+                    answers[current_question] = submitted_value
+                    request.session['quiz_answers'] = answers
+                    
+                    logger.info(f"Saved answer: {current_question} = {submitted_value}")
+                    
+                    # Determine next question
+                    next_key = None
+                    next_config = current_node.get('next')
+                    
+                    if isinstance(next_config, dict):
+                        # Next question depends on answer
+                        next_key = next_config.get(str(submitted_value)) or next_config.get(submitted_value)
+                    elif isinstance(next_config, str):
+                        # Fixed next question
+                        next_key = next_config
+                    # If next_config is None, we're at the end
+                    
+                    logger.info(f"Next key: {next_key}")
+                    
+                    if next_key:
+                        # Move to next question
+                        request.session['current_question'] = next_key
+                        request.session.modified = True
+                        return redirect('event_quiz')
+                    else:
+                        # End of quiz - generate recommendations
+                        logger.info("End of quiz reached, generating recommendations")
+                        
+                        try:
+                            # Get user input for ML model
+                            user_input = get_recommendations(answers)
+                            logger.info(f"User input for ML: {user_input}")
+                            
+                            # Get ML recommendations
+                            ml_recommendations = predict_recommendations(user_input, num_recommendations=5)
+                            logger.info(f"ML recommendations: {ml_recommendations}")
+                            
+                            # Get fallback recommendations
+                            fallback_recommendations = get_fallback_recommendations(
+                                user_input.get('Interest_Area', 'Tech'),
+                                user_input.get('Vibe', 'Educational'),
+                                user_input.get('Likes_Competition', 0)
+                            )
+                            
+                            # Combine and deduplicate
+                            all_recommendations = list(dict.fromkeys(ml_recommendations + fallback_recommendations))[:3]
+                            logger.info(f"Final recommendations: {all_recommendations}")
+                            
+                            request.session['event_recommendations'] = all_recommendations
+                            
+                            return render(request, 'events/quiz_select.html', {
+                                'recommendations': all_recommendations,
+                                'user_answers': answers
+                            })
+                            
+                        except Exception as e:
+                            logger.error(f"Error generating recommendations: {str(e)}")
+                            fallback_recs = ['Art Exhibition', 'Tech Workshop', 'Open Mic']
+                            return render(request, 'events/quiz_select.html', {
+                                'recommendations': fallback_recs,
+                                'user_answers': answers
+                            })
+                else:
+                    logger.warning(f"Invalid value {submitted_value} for question {current_question}")
+                    messages.error(request, "Please select a valid option.")
+            else:
+                logger.warning(f"No value submitted for question {current_question}")
+                messages.error(request, "Please select an option before proceeding.")
+                
+        except Exception as e:
+            logger.error(f"Error processing quiz POST: {str(e)}")
+            messages.error(request, "An error occurred. Please try again.")
+        
+        return redirect('event_quiz')
+
+    # GET request - show current question
+    try:
+        current_node = question_tree.get(current_question, {})
+        
+        if not current_node:
+            logger.error(f"No question found for key: {current_question}")
+            # Reset quiz
+            request.session['current_question'] = 'year'
+            request.session['quiz_answers'] = {}
+            return redirect('event_quiz')
+        
+        # Calculate progress
+        all_questions = list(question_tree.keys())
+        try:
+            progress_index = all_questions.index(current_question) + 1
+            total_questions = len(all_questions)
+            progress = f"Question {progress_index} of {total_questions}"
+        except ValueError:
+            progress = "Question 1 of 6"
+        
+        context = {
+            'question': current_node,
+            'current_question': current_question,
+            'progress': progress,
+            'answered': answers
+        }
+        
+        return render(request, 'events/quiz.html', context)
+        
+    except Exception as e:
+        logger.error(f"Error displaying quiz: {str(e)}")
+        messages.error(request, "An error occurred loading the quiz.")
+        return redirect('home')
+
+
+def quiz_result(request):
+    """Show quiz results"""
+    recommendations = request.session.get('event_recommendations', [])
+    
+    if not recommendations:
+        # Generate default recommendations
+        default_input = {
+            'Year': 1,
+            'Department': 'Bachelor in Computer Engineering (BCT)',
+            'Vibe': 'Educational',
+            'Likes_Competition': 0,
+            'Prefers_Group': 1,
+            'Budget_Pref': 'Budget',
+            'Interest_Area': 'Tech'
+        }
+        
+        try:
+            recommendations = predict_recommendations(default_input)
+        except Exception as e:
+            logger.error(f"Error generating default recommendations: {str(e)}")
+            recommendations = ['Art Exhibition', 'Tech Workshop', 'Open Mic']
+    
+    context = {
+        'recommendations': recommendations
+    }
+    
+    return render(request, 'events/quiz_result.html', context)

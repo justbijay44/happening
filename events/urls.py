@@ -18,5 +18,8 @@ urlpatterns = [
     path('manage-volunteers/<int:volunteer_id>/', views.manage_volunteers, name='manage_volunteers'),   
     path('chat/', views.chat_dashboard, name='chat_dashboard'),
     path('todo/<int:event_id>/', views.todo_view, name='todo'),
+
+    path('quiz/', views.event_quiz, name='event_quiz'),
+    path('quiz/result/', views.quiz_result, name='quiz_result'),
 ]
  

@@ -1,58 +1,169 @@
 {
   "intents": [
     {
-      "tag": "event_list",
-      "patterns": ["what events are this week", "show me this week's events", "events this week"],
-      "responses": ["Here are the events this week: [dynamic list]. Check /events/ for details!"],
-      "keywords": "events, week, list"
-    },
-    {
       "tag": "event_today",
-      "patterns": ["what events are today", "today's events", "events today"],
-      "responses": ["Here are todays events: [dynamic list]. Check /events/ for details!"],
-      "keywords": "events, today, list"
+      "patterns": [
+        "events today",
+        "today's events",
+        "what's today",
+        "show me today's events",
+        "any events today",
+        "events for today",
+        "today's schedule",
+        "what's on today",
+        "what events are happening today",
+        "events scheduled for today",
+        "today events",
+        "what is happening today",
+        "show today",
+        "today's activities",
+        "events right now",
+        "current events",
+        "events now"
+      ],
+      "responses": [
+        "Here are today's events:\n{dynamic_list}",
+        "Today's events:\n{dynamic_list}",
+        "Check out today's events:\n{dynamic_list}"
+      ]
     },
     {
-      "tag": "event_register",
-      "patterns": ["how do i register for an event", "register for event", "event signup"],
-      "responses": ["Visit /events/register/ to sign up for an event!"],
-      "keywords": "register, event, sign up"
+      "tag": "event_this_week",
+      "patterns": [
+        "events this week",
+        "this week's events",
+        "week events",
+        "what's this week",
+        "events happening this week",
+        "this week's schedule",
+        "what's on this week",
+        "events for this week",
+        "weekly events",
+        "show me this week",
+        "week schedule",
+        "this week activities",
+        "what's happening this week",
+        "events in the next 7 days",
+        "upcoming events this week"
+      ],
+      "responses": [
+        "Events this week:\n{dynamic_list}",
+        "Here are this week's events:\n{dynamic_list}",
+        "This week's lineup:\n{dynamic_list}"
+      ]
     },
     {
-      "tag": "event_venue",
-      "patterns": ["where is the venue", "venue location", "where is event"],
-      "responses": ["Please specify the event to get the venue details. Check /events/ for a list!"],
-      "keywords": "venue, location, where"
-    },
-    {
-      "tag": "volunteer_signup",
-      "patterns": ["how do i volunteer", "volunteer for event", "sign up to volunteer"],
-      "responses": ["Visit /events/volunteer/ to sign up as a volunteer for college events!"],
-      "keywords": "volunteer, signup, help"
-    },
-    {
-      "tag": "participation_status",
-      "patterns": ["am i registered", "check my registration", "participation status"],
-      "responses": ["Log in and check your participation status at /events/my-participation/!"],
-      "keywords": "registered, status, participation"
-    },
-    {
-      "tag": "fallback",
-      "patterns": ["", "invalid", "unknown"],
-      "responses": ["I'm not sure I understand. Try asking differently about events!", "I don't understand. Try asking about events, venues, or registration!"],
-      "keywords": "fallback, help"
+      "tag": "event_upcoming_week",
+      "patterns": [
+        "events next week",
+        "upcoming week",
+        "next week's events",
+        "what's next week",
+        "events for next week",
+        "what's coming next week",
+        "next week's schedule",
+        "upcoming events",
+        "future events",
+        "next week activities",
+        "show me next week",
+        "events in the following week",
+        "what's planned for next week",
+        "next week's activities",
+        "coming week events"
+      ],
+      "responses": [
+        "Events next week:\n{dynamic_list}",
+        "Upcoming week events:\n{dynamic_list}",
+        "Next week's events:\n{dynamic_list}"
+      ]
     },
     {
       "tag": "event_details",
-      "patterns": ["tell me about {event}", "more details on {event}", "what about {event}"],
-      "responses": ["Here's what I found about {event}: {details}. Check /events/ for more!"],
-      "keywords": ""
+      "patterns": [
+        "event details",
+        "tell me about",
+        "details of",
+        "info about",
+        "give me details on",
+        "what's the info for",
+        "describe the event",
+        "details for",
+        "info on",
+        "more information about",
+        "event information",
+        "tell me more about",
+        "what is",
+        "describe",
+        "explain",
+        "information about",
+        "details about",
+        "more about",
+        "event description",
+        "full details"
+      ],
+      "responses": [
+        "Details for {event}:\nDate: {date}\nDescription: {description}\nVenue: {venue} (Map: {map})",
+        "Here are the details for {event}:\nDate: {date}\nDescription: {description}\nVenue: {venue} (Map: {map})"
+      ]
     },
     {
-      "tag": "event_recommendations",
-      "patterns": ["recommend events", "suggest events for me", "what events should I join"],
-      "responses": ["Based on your interests, I recommend: {recommendations}. Visit /events/ to explore!"],
-      "keywords": ""
+      "tag": "event_venue",
+      "patterns": [
+        "venue",
+        "where is",
+        "location of",
+        "event location",
+        "where's the event",
+        "what's the venue",
+        "find the location",
+        "event place",
+        "where",
+        "location",
+        "place",
+        "address",
+        "venue of",
+        "where will it be",
+        "event address",
+        "where does it take place",
+        "venue location",
+        "place of event"
+      ],
+      "responses": [
+        "Venue for {event}: {venue} (Map: {map})",
+        "The venue for {event} is {venue} (Map: {map})"
+      ]
+    },
+    {
+      "tag": "fallback",
+      "patterns": [
+        "help",
+        "what can you do",
+        "i don't understand",
+        "hello",
+        "hi",
+        "hey",
+        "greetings",
+        "good morning",
+        "good afternoon",
+        "good evening",
+        "assist me",
+        "how can you help",
+        "what do you do",
+        "commands",
+        "options",
+        "menu",
+        "start",
+        "begin",
+        "support",
+        "guide",
+        "how to use",
+        "instructions"
+      ],
+      "responses": [
+        "Hello! I'm your event assistant. I can help you with:\n\n• Events today: 'What events are today?'\n• This week's events: 'Events this week'\n• Next week's events: 'Upcoming events'\n• Event details: 'Details about [event name]'\n• Event venue: 'Where is [event name]?'\n\nJust ask me about any events!",
+        "I'm here to help! Try asking about events today, this week, next week, details, or venue.",
+        "Hi! I can help you find information about events. Ask me about today's events, this week's schedule, upcoming events, or specific event details!"
+      ]
     }
   ]
 }

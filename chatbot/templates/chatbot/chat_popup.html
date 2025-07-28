@@ -1,0 +1,221 @@
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700&display=swap" rel="stylesheet">
+
+<div class="chat-icon" onclick="toggleChat()">
+    <img src="/static/images/chat-icon.png" alt="Chat Icon" style="width: 30px; height: 30px;">
+</div>
+
+<div class="chat-popup" id="chat-popup" style="display: none;">
+    <div class="chat-header">
+        <span>Chat with HaNA</span>
+        <span class="close-btn" onclick="toggleChat()">X</span>
+    </div>
+    <div class="chat-body" id="chat-messages"></div>
+    <div class="chat-input">
+        <input type="text" id="chat-message" placeholder="Type a message..." autocomplete="off">
+        <button onclick="sendMessage()">
+            <img src="/static/images/send.png" alt="Chat Icon" style="width: 30px; height: 30px;">
+        </button>
+    </div>
+</div>
+
+<style>
+    body {
+        font-family: 'Syne', sans-serif;
+    }
+    .chat-icon {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #400FD4, #2A07F9);
+        border-radius: 50%;
+        cursor: pointer;
+        box-shadow: 0 4px 12px rgba(42, 7, 249, 0.3);
+        transition: transform 0.2s;
+        border: 2px solid #fff;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .chat-icon:hover {
+        transform: scale(1.1);
+    }
+    .chat-popup {
+        position: fixed;
+        bottom: 90px;
+        right: 20px;
+        width: 400px;
+        max-width: 95vw;
+        height: 500px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        box-shadow: 0 8px 20px rgba(64, 15, 212, 0.2);
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        font-family: 'Syne', sans-serif;
+        border: 1px solid #e0e0e0;
+    }
+    .chat-header {
+        background: linear-gradient(90deg, #400FD4, #2A07F9);
+        color: white;
+        padding: 12px 15px;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        font-size: 16px;
+        font-weight: bolder;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    .close-btn {
+        cursor: pointer;
+        font-size: 18px;
+        transition: color 0.2s;
+    }
+    .close-btn:hover {
+        color: #ff4444;
+    }
+    .chat-body {
+        flex-grow: 1;
+        padding: 15px;
+        overflow-y: auto;
+        background: #ffffff;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+    }
+    .chat-body p {
+        margin: 8px 0;
+        padding: 10px 12px;
+        border-radius: 8px;
+        max-width: 70%;
+        word-wrap: break-word;
+    }
+    .chat-body p strong {
+        font-weight: bold;
+    }
+    .chat-body .user-message {
+        background: #400FD4;
+        color: white;
+        margin-left: auto;
+        text-align: right;
+        max-width: 60%;
+        max-width: 200px;
+        border: 1px solid #2A07F9;
+    }
+    .chat-body .bot-message {
+        background: #e9ecef;
+        color: #333;
+        max-width: 80%;
+    }
+    .chat-input {
+        padding: 10px;
+        display: flex;
+        gap: 8px;
+        background: #f8f9fa;
+        border-bottom-left-radius: 10px;
+        border-bottom-right-radius: 10px;
+        box-shadow: 0 -2px 5px rgba(0, 0, 0, 0.05);
+    }
+    #chat-message {
+        flex-grow: 1;
+        padding: 10px;
+        border: 1px solid #ddd;
+        border-radius: 20px;
+        outline: none;
+        font-size: 14px;
+    }
+    #chat-message:focus {
+        border-color: #400FD4;
+        box-shadow: 0 0 5px rgba(64, 15, 212, 0.3);
+    }
+    .chat-input button {
+        padding: 10px 15px;
+        background: linear-gradient(90deg, #400FD4, #2A07F9);
+        border: none;
+        border-radius: 20px;
+        color: white;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.2s;
+    }
+    .chat-input button:hover {
+        background: linear-gradient(90deg, #2A07F9, #400FD4);
+    }
+    #chat-messages {
+        height: 100%;
+        overflow-y: auto;
+        scroll-behavior: smooth;
+    }
+    .loading {
+        font-style: italic;
+        color: #666;
+    }
+    .chat-body .bot-message a { 
+        font-weight: 600;
+        color: #2A07F9;
+    }
+</style>
+
+<script>
+    let isLoading = false;
+
+    function toggleChat() {
+        const popup = document.getElementById('chat-popup');
+        const messagesDiv = document.getElementById('chat-messages');
+        popup.style.display = popup.style.display === 'flex' ? 'none' : 'flex';
+
+        // Add default message when opening
+        if (popup.style.display === 'flex' && !messagesDiv.innerHTML.trim()) {
+            messagesDiv.innerHTML += `<p class="bot-message"><strong>HaNA:</strong> How can I assist you today?</p>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+    }
+
+    function sendMessage() {
+        const messageInput = document.getElementById('chat-message');
+        const message = messageInput.value.trim();
+        if (!message || isLoading) return;
+
+        const messagesDiv = document.getElementById('chat-messages');
+        messagesDiv.innerHTML += `<p class="user-message"><strong>You:</strong> ${message}</p>`;
+        messageInput.value = '';
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        // Show loading indicator
+        isLoading = true;
+        messagesDiv.innerHTML += `<p class="bot-message loading"><strong>HaNA: </strong> Thinking...</p>`;
+
+        fetch('/chatbot/chat/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: message })
+        })
+        .then(response => response.json())
+        .then(data => {
+            isLoading = false;
+            const loadingMsg = messagesDiv.getElementsByClassName('loading')[0];
+            if (loadingMsg) loadingMsg.remove();
+
+            if (data.response) {
+                messagesDiv.innerHTML += `<p class="bot-message"><strong>HaNA: </strong>${data.response}</p>`; // Render as HTML
+            } else if (data.error) {
+                messagesDiv.innerHTML += `<p class="bot-message"><strong>HaNA: </strong> Error: ${data.error}</p>`;
+            }
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        })
+        .catch(error => {
+            isLoading = false;
+            const loadingMsg = messagesDiv.getElementsByClassName('loading')[0];
+            if (loadingMsg) loadingMsg.remove();
+            messagesDiv.innerHTML += `<p class="bot-message"><strong>HaNA: </strong> Error: Failed to connect.</p>`;
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        });
+    }
+
+    document.getElementById('chat-message').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter' && !isLoading) sendMessage();
+    });
+</script>

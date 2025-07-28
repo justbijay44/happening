@@ -1,0 +1,27 @@
+{
+  "tag_to_idx": {
+    "event_this_week": 0,
+    "event_today": 1,
+    "fallback": 2,
+    "event_venue": 3,
+    "event_upcoming_week": 4,
+    "event_details": 5
+  },
+  "idx_to_tag": {
+    "0": "event_this_week",
+    "1": "event_today",
+    "2": "fallback",
+    "3": "event_venue",
+    "4": "event_upcoming_week",
+    "5": "event_details"
+  },
+  "unique_tags": [
+    "event_this_week",
+    "event_today",
+    "fallback",
+    "event_venue",
+    "event_upcoming_week",
+    "event_details"
+  ],
+  "max_length": 15
+}

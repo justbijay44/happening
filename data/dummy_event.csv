@@ -1,0 +1,52 @@
+Year,Department,Vibe,Likes_Competition,Prefers_Group,Budget_Pref,Interest_Area,Recommended_Event
+1,Bachelors in Electrical Engineering (BEL),Educational,0,1,Free,Tech,Tech Workshop
+2,Bachelor in Computer Engineering (BCT),Educational,1,1,Free,Tech,Hackathon
+2,Bachelor in Civil Engineering (BCE),Educational,0,1,Premium,Sports,Board Games Night
+1,Bachelor in Computer Engineering (BCT),Creative,0,0,Budget,Arts,Art Exhibition
+3,Bachelor in Computer Engineering (BCT),Creative,1,0,Premium,Sports,Sports Fest
+4,Bachelor in Civil Engineering (BCE),Educational,0,0,Premium,Music,Open Mic
+2,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Creative,0,0,Free,Arts,Art Exhibition
+1,Bachelor in Computer Engineering (BCT),Hype,1,0,Free,Music,DJ Night
+4,Bachelors in Electrical Engineering (BEL),Hype,0,1,Premium,Music,Open Mic
+4,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Hype,0,1,Premium,Arts,Art Exhibition
+3,Bachelor in Computer Application (BCA),Chill,1,0,Premium,Arts,Creative Battle
+1,Bachelors in Electrical Engineering (BEL),Educational,0,1,Budget,Arts,Art Exhibition
+4,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Hype,1,1,Premium,Sports,Sports Fest
+4,Bachelor in Civil Engineering (BCE),Hype,1,0,Free,Photography,Photo Contest
+1,Bachelor in Computer Application (BCA),Educational,0,0,Free,Arts,Art Exhibition
+1,Bachelor in Computer Engineering (BCT),Educational,0,1,Free,Tech,Tech Workshop
+3,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Creative,0,1,Budget,Sports,Board Games Night
+4,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Hype,1,0,Budget,Arts,Creative Battle
+4,Bachelors in Electrical Engineering (BEL),Chill,1,1,Premium,Arts,Creative Battle
+2,Bachelor in Civil Engineering (BCE),Educational,1,1,Premium,Arts,Creative Battle
+4,Bachelor in Computer Application (BCA),Chill,0,1,Free,Tech,Tech Workshop
+2,Bachelor in Civil Engineering (BCE),Educational,0,0,Premium,Tech,Tech Workshop
+3,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Chill,1,0,Premium,Music,DJ Night
+3,Bachelor in Computer Application (BCA),Creative,0,1,Free,Tech,Tech Workshop
+3,Bachelor in Civil Engineering (BCE),Hype,0,0,Premium,Music,Open Mic
+3,Bachelors in Electrical Engineering (BEL),Creative,1,1,Budget,Music,DJ Night
+1,Bachelor in Computer Application (BCA),Hype,1,1,Free,Music,DJ Night
+4,Bachelor in Civil Engineering (BCE),Educational,1,0,Budget,Photography,Photo Contest
+4,Bachelor in Computer Engineering (BCT),Educational,0,1,Premium,Arts,Art Exhibition
+2,Bachelor in Computer Engineering (BCT),Chill,0,1,Premium,Tech,Tech Workshop
+3,Bachelor in Civil Engineering (BCE),Educational,0,0,Premium,Photography,Photo Walk
+4,Bachelors in Electrical Engineering (BEL),Hype,0,0,Premium,Photography,Photo Walk
+3,Bachelor in Computer Application (BCA),Educational,0,0,Premium,Photography,Photo Walk
+4,Bachelor in Computer Engineering (BCT),Chill,1,1,Premium,Sports,Sports Fest
+2,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Hype,1,0,Budget,Sports,Sports Fest
+1,Bachelor in Civil Engineering (BCE),Creative,1,1,Budget,Arts,Creative Battle
+4,Bachelor in Computer Engineering (BCT),Hype,1,0,Budget,Photography,Photo Contest
+3,Bachelors in Electrical Engineering (BEL),Creative,0,0,Premium,Sports,Board Games Night
+3,Bachelor in Computer Engineering (BCT),Creative,1,1,Premium,Sports,Sports Fest
+4,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Creative,1,0,Premium,Sports,Sports Fest
+3,Bachelor in Civil Engineering (BCE),Creative,0,0,Budget,Music,Open Mic
+2,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Educational,0,1,Budget,Tech,Tech Workshop
+3,Bachelor in Computer Application (BCA),Hype,1,0,Budget,Sports,Sports Fest
+1,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Creative,0,1,Free,Sports,Board Games Night
+2,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Hype,1,1,Budget,Sports,Sports Fest
+1,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Educational,0,1,Premium,Music,Open Mic
+1,Bachelor in Civil Engineering (BCE),Creative,0,1,Budget,Arts,Art Exhibition
+1,Bachelor in Computer Engineering (BCT),Educational,0,1,Free,Photography,Photo Walk
+1,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Hype,1,0,Budget,Sports,Sports Fest
+2,"Bachelor in Electronics, Communication and Information Engineering (BEI)",Creative,0,0,Free,Sports,Board Games Night
+4,Bachelor in Computer Engineering (BCT),Creative,1,1,Free,Sports,Sports Fest

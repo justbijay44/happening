@@ -1,15 +1,16 @@
 {% extends 'layout.html' %}
 
 {% block navbar %}
-
 {% endblock %}
 
 {% block content %}
-<a href="{% url 'home' %}">Home</a>
+<!-- <a href="{% url 'home' %}">Home</a> -->
 <section class="py-16 bg-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div class="flex justify-between items-center mb-8">
-            <h2 class="text-3xl text-[#2A07F9] font-bold hidden md:block">All Upcoming Events</h2>
+            <h2 class="hidden md:block text-3xl text-[#2A07F9] font-bold">
+                 <a href="{% url 'home' %}" class="hover:underline">Home</a> / Upcoming Events
+            </h2>
             <!-- Filters -->
             <form method="GET" class="flex space-x-6 text-[#1D275F]">
                 <!-- Event Type Filter -->

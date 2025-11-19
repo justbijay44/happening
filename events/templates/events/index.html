@@ -28,46 +28,17 @@
                 memories, and be a part of the action !
             </p>
             <div class="space-x-4">
-                <a href="" class="bg-red-600 px-6 py-3 rounded-lg text-white font-medium hover:bg-red-700 transition">
+                <a href="{% url 'all_events' %}" class="bg-red-600 px-6 py-3 rounded-lg text-white font-medium hover:bg-red-700 transition">
                     BE A PART OF EVENT
                 </a>
-                <a href=""
+                <a href="#propose-event"
                     class="bg-transparent border-2 border-white px-6 py-3 rounded-lg text-white font-medium hover:bg-white hover:text-purple-900 transition">
-                    CREATE A EVENT
+                    PROPOSE A EVENT
                 </a>
             </div>
         </div>
         <!-- Floating Form -->
-        <div class="absolute bottom-0 translate-y-1/2 z-20 w-full max-w-7xl mx-auto px-4">
-            <form class="bg-[#2A07F9] p-8 rounded-xl shadow-2xl border border-white/30">
-                <div
-                    class="flex flex-col md:flex-row justify-between text-[#1D275F] items-start space-y-6 md:space-y-0 md:space-x-6">
-                    <div class="w-full md:w-auto flex flex-col items-start">
-                        <label class="block text-white text-lg font-medium mb-2">Looking for</label>
-                        <select class="p-3 rounded-lg bg-white w-70 text-left pr-16 focus:outline-none">
-                            <option>Choose event type</option>
-                        </select>
-                    </div>
-                    <div class="w-full md:w-auto flex flex-col items-start">
-                        <label class="block text-white text-lg font-medium mb-2">Location</label>
-                        <select class="p-3 rounded-lg bg-white w-70 text-left pr-16 focus:outline-none">
-                            <option>Choose location</option>
-                        </select>
-                    </div>
-                    <div class="w-full md:w-auto flex flex-col items-start">
-                        <label class="block text-white text-lg font-medium mb-2">When</label>
-                        <select class="p-3 rounded-lg bg-white w-70 text-left pr-16 focus:outline-none">
-                            <option>Choose date and time</option>
-                        </select>
-                    </div>
-                    <button
-                        class="bg-white text-blue-900 px-6 py-2 rounded-lg w-full md:w-auto h-20 flex items-center justify-center mt-6 md:mt-0">
-                        <!-- <img src="{% static 'images/search.png' %}" alt="Search" class="h-6 w-6"> -->
-                        <i class="fas fa-search text-[#1D275F] text-2xl mr-2"></i>
-                    </button>
-                </div>
-            </form>
-        </div>
+        {% include 'events/floating_form.html' %}
     </section>
 </main>
 
@@ -80,34 +51,37 @@
 <!-- Upcoming Events -->
 {% include 'events/past_events.html' %}
 
-<!-- Quiz Invitation Section -->
-<section class="py-12 px-6 bg-gradient-to-b from-[#21086E] to-[#400FD4] text-white text-center">
-    <div class="relative z-10 max-w-2xl mx-auto">
-        <h2 class="text-3xl md:text-4xl font-bold mb-6">Discover Events Tailored for You!</h2>
-        <p class="text-lg mb-4 text-purple-200">Take our quick quiz to help us recommend events that match your
-            interests. Your input will improve our suggestions!</p>
+<!-- Quiz -->
+<section class="w-full bg-gradient-to-r from-purple-600 to-purple-800 text-white py-16 px-6">
+    <div class="max-w-4xl mx-auto text-center">
+        <h2 class="text-4xl md:text-5xl font-bold mb-4">Take a Quiz</h2>
+        <p class="text-lg md:text-xl mb-8">Step towards making relevant events come to life</p>
         <a href="{% url 'event_quiz' %}"
-            class="bg-white text-purple-900 px-6 py-3 rounded-lg font-medium hover:bg-gray-200 transition">
-            Take the Quiz
+            class="inline-block px-8 py-4 bg-white text-purple-700 font-semibold text-lg rounded-full shadow-md hover:bg-purple-100 hover:scale-105 transition-all duration-300">
+            Start Now
         </a>
     </div>
-    <!-- <div class="absolute inset-0 bg-cover bg-center opacity-20"
-        style="background-image: url({% static 'images/landing_bg.jpg' %});"></div> -->
 </section>
 
-<!-- Recommended Events for Proposers -->
-<section class="recommendations relative py-12 px-6 bg-gradient-to-b from-[#21086E] to-[#400FD4] text-white">
-    <div class="absolute inset-0 bg-cover bg-center opacity-20"
-        style="background-image: url({% static 'images/landing_bg.jpg' %});"></div>
-    <div class="relative z-10 max-w-2xl mx-auto">
-        <h2 class="text-3xl md:text-4xl font-bold mb-6 text-center">Popular Event Ideas Based on User Interests</h2>
-        <ul class="list-disc list-inside text-lg space-y-2">
-            {% for rec in event_recommendations %}
-            <li>{{ rec }}</li>
-            {% endfor %}
-        </ul>
+
+<!-- Stats Section -->
+<div class="max-w-5xl mx-auto text-center py-12 px-4">
+    <h2 class="text-3xl md:text-4xl font-bold mb-6 text-gray-800">📊 What Students Want to See</h2>
+    <p class="text-md text-gray-500 max-w-2xl mx-auto mt-4 mb-10 italic">
+        These counts represent the number of students predicted to be interested in each event after taking the quiz.
+    </p>
+
+    <div class="grid grid-cols-2 md:grid-cols-3 gap-6">
+        {% for event in prediction_counts %}
+        <div
+            class="bg-purple-500 hover:bg-purple-700 transition duration-300 shadow-lg rounded-xl p-6 transform hover:scale-105">
+            <p class="text-lg font-semibold text-white">{{ event.event_name }}</p>
+            <p class="text-6xl font-bold text-white mt-2">{{ event.count }}</p>
+        </div>
+        {% endfor %}
     </div>
-</section>
+</div>
+
 
 <!-- Purpose Form -->
 {% include 'events/event_proposed.html' %}

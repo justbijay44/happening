@@ -9,6 +9,7 @@ urlpatterns = [
     path('', include('events.urls')),
     path('users/', include('users.urls')),
     path('chatbot/', include('chatbot.urls')),
+    path('decision_tree/', include('decision_tree.urls')),
 ]
 
 if settings.DEBUG:

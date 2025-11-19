@@ -1,0 +1,151 @@
+Department,Event_Type,Time_Preference,Format,Interest,Target_Event
+BCE,Workshop,Morning,In-person,Skill-building,Tech Workshop
+BCE,Seminar,Afternoon,Virtual,Inspiration,Guest Lecture Series
+BCE,Social,Evening,In-person,Networking,Social Mixer
+BCE,Hackathon,Afternoon,Hybrid,Skill-building,Hackathon
+BCE,Guest Lecture,Evening,Virtual,Career Development,Career Talk
+BCE,Workshop,Evening,In-person,Fun,Tech Workshop
+BCE,Seminar,Morning,Hybrid,Inspiration,Guest Lecture Series
+BCE,Social,Afternoon,In-person,Networking,Social Mixer
+BCE,Hackathon,Morning,Virtual,Skill-building,Hackathon
+BCE,Guest Lecture,Afternoon,In-person,Career Development,Career Talk
+BCE,Workshop,Afternoon,Hybrid,Skill-building,Tech Workshop
+BCE,Seminar,Evening,Virtual,Inspiration,Guest Lecture Series
+BCE,Social,Morning,In-person,Networking,Social Mixer
+BCE,Hackathon,Evening,Hybrid,Skill-building,Hackathon
+BCE,Guest Lecture,Morning,Virtual,Career Development,Career Talk
+BCE,Workshop,Morning,In-person,Fun,Tech Workshop
+BCE,Seminar,Afternoon,Hybrid,Inspiration,Guest Lecture Series
+BCE,Social,Evening,In-person,Networking,Social Mixer
+BCE,Hackathon,Afternoon,Virtual,Skill-building,Hackathon
+BCE,Guest Lecture,Evening,In-person,Career Development,Career Talk
+BCE,Workshop,Evening,Hybrid,Skill-building,Tech Workshop
+BCE,Seminar,Morning,Virtual,Inspiration,Guest Lecture Series
+BCE,Social,Afternoon,In-person,Networking,Social Mixer
+BCE,Hackathon,Morning,Hybrid,Skill-building,Hackathon
+BCE,Guest Lecture,Afternoon,Virtual,Career Development,Career Talk
+BCE,Workshop,Morning,In-person,Fun,Tech Workshop
+BCE,Seminar,Evening,Hybrid,Inspiration,Guest Lecture Series
+BCE,Social,Morning,In-person,Networking,Social Mixer
+BCE,Hackathon,Afternoon,Virtual,Skill-building,Hackathon
+BCE,Guest Lecture,Evening,In-person,Career Development,Career Talk
+BCA,Workshop,Afternoon,Virtual,Skill-building,Tech Workshop
+BCA,Seminar,Evening,In-person,Inspiration,Guest Lecture Series
+BCA,Social,Morning,Hybrid,Networking,Social Mixer
+BCA,Hackathon,Evening,In-person,Skill-building,Hackathon
+BCA,Guest Lecture,Morning,Virtual,Career Development,Career Talk
+BCA,Workshop,Morning,Hybrid,Fun,Tech Workshop
+BCA,Seminar,Afternoon,In-person,Inspiration,Guest Lecture Series
+BCA,Social,Evening,Virtual,Networking,Social Mixer
+BCA,Hackathon,Afternoon,Hybrid,Skill-building,Hackathon
+BCA,Guest Lecture,Evening,In-person,Career Development,Career Talk
+BCA,Workshop,Evening,Virtual,Skill-building,Tech Workshop
+BCA,Seminar,Morning,Hybrid,Inspiration,Guest Lecture Series
+BCA,Social,Afternoon,In-person,Networking,Social Mixer
+BCA,Hackathon,Morning,Virtual,Skill-building,Hackathon
+BCA,Guest Lecture,Afternoon,In-person,Career Development,Career Talk
+BCA,Workshop,Morning,Hybrid,Fun,Tech Workshop
+BCA,Seminar,Evening,Virtual,Inspiration,Guest Lecture Series
+BCA,Social,Morning,In-person,Networking,Social Mixer
+BCA,Hackathon,Afternoon,Hybrid,Skill-building,Hackathon
+BCA,Guest Lecture,Evening,Virtual,Career Development,Career Talk
+BCA,Workshop,Afternoon,In-person,Skill-building,Tech Workshop
+BCA,Seminar,Morning,Hybrid,Inspiration,Guest Lecture Series
+BCA,Social,Evening,In-person,Networking,Social Mixer
+BCA,Hackathon,Morning,Virtual,Skill-building,Hackathon
+BCA,Guest Lecture,Afternoon,Hybrid,Career Development,Career Talk
+BCA,Workshop,Evening,In-person,Fun,Tech Workshop
+BCA,Seminar,Afternoon,Virtual,Inspiration,Guest Lecture Series
+BCA,Social,Morning,Hybrid,Networking,Social Mixer
+BCA,Hackathon,Evening,In-person,Skill-building,Hackathon
+BCA,Guest Lecture,Morning,Virtual,Career Development,Career Talk
+BCT,Hackathon,Morning,In-person,Skill-building,Hackathon
+BCT,Workshop,Afternoon,Hybrid,Skill-building,Tech Workshop
+BCT,Seminar,Evening,Virtual,Inspiration,Guest Lecture Series
+BCT,Social,Morning,In-person,Networking,Social Mixer
+BCT,Guest Lecture,Afternoon,Hybrid,Career Development,Career Talk
+BCT,Hackathon,Evening,Virtual,Skill-building,Hackathon
+BCT,Workshop,Morning,In-person,Fun,Tech Workshop
+BCT,Seminar,Afternoon,Hybrid,Inspiration,Guest Lecture Series
+BCT,Social,Evening,In-person,Networking,Social Mixer
+BCT,Guest Lecture,Morning,Virtual,Career Development,Career Talk
+BCT,Hackathon,Afternoon,Hybrid,Skill-building,Hackathon
+BCT,Workshop,Evening,In-person,Skill-building,Tech Workshop
+BCT,Seminar,Morning,Virtual,Inspiration,Guest Lecture Series
+BCT,Social,Afternoon,Hybrid,Networking,Social Mixer
+BCT,Guest Lecture,Evening,In-person,Career Development,Career Talk
+BCT,Hackathon,Morning,Virtual,Skill-building,Hackathon
+BCT,Workshop,Afternoon,In-person,Fun,Tech Workshop
+BCT,Seminar,Evening,Hybrid,Inspiration,Guest Lecture Series
+BCT,Social,Morning,In-person,Networking,Social Mixer
+BCT,Guest Lecture,Afternoon,Virtual,Career Development,Career Talk
+BCT,Hackathon,Evening,Hybrid,Skill-building,Hackathon
+BCT,Workshop,Morning,In-person,Skill-building,Tech Workshop
+BCT,Seminar,Afternoon,Virtual,Inspiration,Guest Lecture Series
+BCT,Social,Evening,Hybrid,Networking,Social Mixer
+BCT,Guest Lecture,Morning,In-person,Career Development,Career Talk
+BCT,Hackathon,Afternoon,Virtual,Skill-building,Hackathon
+BCT,Workshop,Evening,Hybrid,Fun,Tech Workshop
+BCT,Seminar,Morning,In-person,Inspiration,Guest Lecture Series
+BCT,Social,Afternoon,Virtual,Networking,Social Mixer
+BCT,Guest Lecture,Evening,Hybrid,Career Development,Career Talk
+BEI,Workshop,Morning,Virtual,Skill-building,Tech Workshop
+BEI,Seminar,Afternoon,In-person,Inspiration,Guest Lecture Series
+BEI,Social,Evening,Hybrid,Networking,Social Mixer
+BEI,Hackathon,Morning,In-person,Skill-building,Hackathon
+BEI,Guest Lecture,Afternoon,Virtual,Career Development,Career Talk
+BEI,Workshop,Evening,Hybrid,Fun,Tech Workshop
+BEI,Seminar,Morning,In-person,Inspiration,Guest Lecture Series
+BEI,Social,Afternoon,Virtual,Networking,Social Mixer
+BEI,Hackathon,Evening,Hybrid,Skill-building,Hackathon
+BEI,Guest Lecture,Morning,In-person,Career Development,Career Talk
+BEI,Workshop,Afternoon,Virtual,Skill-building,Tech Workshop
+BEI,Seminar,Evening,Hybrid,Inspiration,Guest Lecture Series
+BEI,Social,Morning,In-person,Networking,Social Mixer
+BEI,Hackathon,Afternoon,Virtual,Skill-building,Hackathon
+BEI,Guest Lecture,Evening,In-person,Career Development,Career Talk
+BEI,Workshop,Morning,Hybrid,Fun,Tech Workshop
+BEI,Seminar,Afternoon,Virtual,Inspiration,Guest Lecture Series
+BEI,Social,Evening,In-person,Networking,Social Mixer
+BEI,Hackathon,Morning,Hybrid,Skill-building,Hackathon
+BEI,Guest Lecture,Afternoon,Virtual,Career Development,Career Talk
+BEI,Workshop,Evening,In-person,Skill-building,Tech Workshop
+BEI,Seminar,Morning,Hybrid,Inspiration,Guest Lecture Series
+BEI,Social,Afternoon,Virtual,Networking,Social Mixer
+BEI,Hackathon,Evening,In-person,Skill-building,Hackathon
+BEI,Guest Lecture,Morning,Hybrid,Career Development,Career Talk
+BEI,Workshop,Afternoon,Virtual,Fun,Tech Workshop
+BEI,Seminar,Evening,In-person,Inspiration,Guest Lecture Series
+BEI,Social,Morning,Hybrid,Networking,Social Mixer
+BEI,Hackathon,Afternoon,Virtual,Skill-building,Hackathon
+BEI,Guest Lecture,Evening,In-person,Career Development,Career Talk
+BEL,Social,Morning,In-person,Networking,Social Mixer
+BEL,Guest Lecture,Afternoon,Virtual,Career Development,Career Talk
+BEL,Workshop,Evening,Hybrid,Skill-building,Tech Workshop
+BEL,Seminar,Morning,In-person,Inspiration,Guest Lecture Series
+BEL,Hackathon,Afternoon,Virtual,Skill-building,Hackathon
+BEL,Social,Evening,Hybrid,Fun,Social Mixer
+BEL,Guest Lecture,Morning,In-person,Career Development,Career Talk
+BEL,Workshop,Afternoon,Virtual,Skill-building,Tech Workshop
+BEL,Seminar,Evening,Hybrid,Inspiration,Guest Lecture Series
+BEL,Hackathon,Morning,In-person,Skill-building,Hackathon
+BEL,Social,Afternoon,Virtual,Networking,Social Mixer
+BEL,Guest Lecture,Evening,In-person,Career Development,Career Talk
+BEL,Workshop,Morning,Hybrid,Skill-building,Tech Workshop
+BEL,Seminar,Afternoon,Virtual,Inspiration,Guest Lecture Series
+BEL,Hackathon,Evening,In-person,Skill-building,Hackathon
+BEL,Social,Morning,Hybrid,Networking,Social Mixer
+BEL,Guest Lecture,Afternoon,In-person,Career Development,Career Talk
+BEL,Workshop,Evening,Virtual,Fun,Tech Workshop
+BEL,Seminar,Morning,Hybrid,Inspiration,Guest Lecture Series
+BEL,Hackathon,Afternoon,In-person,Skill-building,Hackathon
+BEL,Social,Evening,Virtual,Networking,Social Mixer
+BEL,Guest Lecture,Morning,Hybrid,Career Development,Career Talk
+BEL,Workshop,Afternoon,In-person,Skill-building,Tech Workshop
+BEL,Seminar,Evening,Virtual,Inspiration,Guest Lecture Series
+BEL,Hackathon,Morning,Hybrid,Skill-building,Hackathon
+BEL,Social,Afternoon,In-person,Networking,Social Mixer
+BEL,Guest Lecture,Evening,Hybrid,Career Development,Career Talk
+BEL,Workshop,Morning,Virtual,Fun,Tech Workshop
+BEL,Seminar,Afternoon,In-person,Inspiration,Guest Lecture Series
+BEL,Hackathon,Evening,Virtual,Skill-building,Hackathon

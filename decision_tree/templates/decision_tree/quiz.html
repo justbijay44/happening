@@ -1,0 +1,28 @@
+{% extends 'layout.html' %}
+{% block title %}Event Quiz{% endblock %}
+{% block navbar %}{% endblock %}
+
+{% block content %}
+<div class="max-w-xl mx-auto py-16 px-6 bg-white shadow-lg rounded-lg mt-8">
+    <h2 class="text-3xl font-bold mb-8 text-center text-purple-700">Take the Quiz</h2>
+
+    <form method="post">
+        {% csrf_token %}
+        <input type="hidden" name="step" value="{{ step }}">
+
+        <label class="block text-lg font-semibold mb-4">{{ question_text }}</label>
+
+        {% for option in options %}
+            <label class="block mb-3 cursor-pointer">
+                <input type="radio" name="answer" value="{{ option }}" required class="mr-2">
+                <span class="text-gray-700">{{ option }}</span>
+            </label>
+        {% endfor %}
+
+        <button type="submit" class="mt-6 w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 rounded">
+            {% if next_step_exists %} Next {% else %} Submit {% endif %}
+        </button>
+    </form>
+</div>
+{% endblock %}
+{% block footer %}{% endblock %}

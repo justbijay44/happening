@@ -1,27 +1,39 @@
 {
   "tag_to_idx": {
-    "event_this_week": 0,
-    "event_today": 1,
+    "event_venue": 0,
+    "event_this_week": 1,
     "fallback": 2,
-    "event_venue": 3,
-    "event_upcoming_week": 4,
-    "event_details": 5
+    "event_tomorrow": 3,
+    "goodbye": 4,
+    "greeting": 5,
+    "event_details": 6,
+    "event_upcoming_week": 7,
+    "event_all": 8,
+    "event_today": 9
   },
   "idx_to_tag": {
-    "0": "event_this_week",
-    "1": "event_today",
+    "0": "event_venue",
+    "1": "event_this_week",
     "2": "fallback",
-    "3": "event_venue",
-    "4": "event_upcoming_week",
-    "5": "event_details"
+    "3": "event_tomorrow",
+    "4": "goodbye",
+    "5": "greeting",
+    "6": "event_details",
+    "7": "event_upcoming_week",
+    "8": "event_all",
+    "9": "event_today"
   },
   "unique_tags": [
-    "event_this_week",
-    "event_today",
-    "fallback",
     "event_venue",
+    "event_this_week",
+    "fallback",
+    "event_tomorrow",
+    "goodbye",
+    "greeting",
+    "event_details",
     "event_upcoming_week",
-    "event_details"
+    "event_all",
+    "event_today"
   ],
   "max_length": 15
 }

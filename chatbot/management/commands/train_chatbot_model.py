@@ -29,33 +29,26 @@ class Command(BaseCommand):
         if not text:
             return ""
         
-        # Convert to lowercase and clean
         text = text.lower().strip()
         
-        # Remove extra whitespace and special characters
         text = re.sub(r'[^\w\s]', ' ', text)
         text = re.sub(r'\s+', ' ', text)
         
-        # Simple tokenization
         words = text.split()
-        # Remove very short words
         words = [word for word in words if len(word) > 1]
         
         return " ".join(words)
 
     def augment_patterns(self, patterns, tags):
-        """Simple data augmentation"""
         augmented_patterns = []
         augmented_tags = []
         
-        # Original patterns (preprocessed)
         for pattern, tag in zip(patterns, tags):
             processed = self.preprocess_text(pattern)
             if processed:
                 augmented_patterns.append(processed)
                 augmented_tags.append(tag)
         
-        # Add simple variations
         simple_variations = {
             'event_today': [
                 'events happening today', 'what today', 'today event',
@@ -71,6 +64,10 @@ class Command(BaseCommand):
                 'next week event', 'upcoming event', 'events next week',
                 'show next week events', 'events for next week',
                 'next weeks events', 'coming events'
+            ],
+            'event_all': [
+                'show me everything', 'display all events', 'full schedule',
+                'complete event schedule', 'all event list', 'entire event list'
             ],
             'event_details': [
                 'event info', 'more info', 'event information', 'about event',
@@ -106,7 +103,6 @@ class Command(BaseCommand):
         model_path = os.path.join(base_dir, 'chatbot_model.h5')
         tokenizer_path = os.path.join(base_dir, 'chatbot_tokenizer.json')
 
-        # Load intents
         try:
             with open(response_path, 'r') as file:
                 intents = json.load(file)['intents']
@@ -118,7 +114,6 @@ class Command(BaseCommand):
             logger.error(f"Invalid JSON in {response_path}")
             return
 
-        # Prepare training data
         patterns = []
         tags = []
         for intent in intents:
@@ -130,54 +125,55 @@ class Command(BaseCommand):
             logger.error("No patterns found in response.json")
             return
 
-        # Augment data
         patterns, tags = self.augment_patterns(patterns, tags)
         logger.info(f"Training with {len(patterns)} patterns after augmentation")
 
-        # Create and fit tokenizer
-        tokenizer = Tokenizer(num_words=500, oov_token="<OOV>")  # Reduced vocabulary
+        tokenizer = Tokenizer(num_words=500, oov_token="<OOV>")  
         tokenizer.fit_on_texts(patterns)
         
-        # Convert to sequences and pad
-        max_length = 15  # Reduced sequence length
+        max_length = 15  
         sequences = tokenizer.texts_to_sequences(patterns)
         padded_sequences = pad_sequences(sequences, maxlen=max_length, padding='post')
 
-        # Prepare labels
         unique_tags = list(set(tags))
         logger.info(f"Found {len(unique_tags)} unique intents: {unique_tags}")
         
         tag_to_idx = {tag: idx for idx, tag in enumerate(unique_tags)}
         y = np.array([tag_to_idx[tag] for tag in tags])
         
-        # Convert to categorical
         y_categorical = to_categorical(y, num_classes=len(unique_tags))
 
         try:
-            # Build simpler model
             vocab_size = len(tokenizer.word_index) + 1
-            embedding_dim = 32  # Reduced
-            lstm_units = 32     # Reduced
-            
+            embedding_dim = 32  
+            lstm_units = 32    
+            # lstm here gives tag where pattern is
             model = Sequential([
                 Embedding(vocab_size, embedding_dim, input_length=max_length),
                 LSTM(lstm_units, dropout=0.2, recurrent_dropout=0.2),
-                Dense(16, activation='relu'),
+                Dense(16, activation='relu'), 
                 Dropout(0.3),
                 Dense(len(unique_tags), activation='softmax')
             ])
 
-            # Compile
             model.compile(
                 loss='categorical_crossentropy',
                 optimizer='adam',
                 metrics=['accuracy']
             )
 
+            model.build(input_shape=(None, max_length))
+            
             logger.info("Model architecture:")
             model.summary()
+            logger.info(f"\n📊 Model Parameters:")
+            logger.info(f"   - Vocabulary size: {vocab_size}")
+            logger.info(f"   - Embedding dimension: {embedding_dim}")
+            logger.info(f"   - LSTM units: {lstm_units}")
+            logger.info(f"   - Output classes: {len(unique_tags)}")
+            logger.info(f"   - Max sequence length: {max_length}")
+            logger.info(f"   - Total training samples: {len(padded_sequences)}\n")
 
-            # Simple callbacks
             callbacks = [
                 EarlyStopping(
                     monitor='val_accuracy',
@@ -187,23 +183,25 @@ class Command(BaseCommand):
                 )
             ]
 
-            # Train model with more epochs but simpler architecture
             logger.info("Starting model training...")
             history = model.fit(
                 padded_sequences, y_categorical,
-                epochs=150,  # More epochs
-                batch_size=4,  # Smaller batch size
+                epochs=150,  
+                batch_size=4, 
                 validation_split=0.25,
                 callbacks=callbacks,
                 verbose=1
             )
 
-            # Evaluate final model
             final_loss, final_accuracy = model.evaluate(padded_sequences, y_categorical, verbose=0)
-            logger.info(f"Final training accuracy: {final_accuracy:.4f}")
+            logger.info(f"\n✅ Final training accuracy: {final_accuracy:.4f}")
+            logger.info(f"✅ Final training loss: {final_loss:.4f}")
+            
+            # Show validation accuracy
+            best_val_acc = max(history.history['val_accuracy'])
+            logger.info(f"✅ Best validation accuracy: {best_val_acc:.4f}")
 
-            # Save model and tokenizer
-            logger.info(f"Saving model to {model_path}")
+            logger.info(f"\nSaving model to {model_path}")
             model.save(model_path)
             
             logger.info(f"Saving tokenizer to {tokenizer_path}")
@@ -211,23 +209,30 @@ class Command(BaseCommand):
             with open(tokenizer_path, 'w') as f:
                 f.write(tokenizer_config)
 
-            # Save tag mappings
             tag_mapping_path = os.path.join(base_dir, 'tag_mappings.json')
             with open(tag_mapping_path, 'w') as f:
                 json.dump({
                     'tag_to_idx': tag_to_idx,
                     'idx_to_tag': {str(k): v for k, v in {idx: tag for tag, idx in tag_to_idx.items()}.items()},
                     'unique_tags': unique_tags,
-                    'max_length': max_length  # Save this for consistency
+                    'max_length': max_length  
                 }, f, indent=2)
 
             self.stdout.write(
                 self.style.SUCCESS(
+                    f'\n{"="*60}\n'
                     f'✅ Model training completed successfully!\n'
-                    f'📊 Final accuracy: {final_accuracy:.4f}\n'
-                    f'💾 Model saved to: {model_path}\n'
-                    f'🔤 Tokenizer saved to: {tokenizer_path}\n'
-                    f'🏷️ Tag mappings saved to: {tag_mapping_path}'
+                    f'{"="*60}\n'
+                    f'📊 Training Results:\n'
+                    f'   - Final training accuracy: {final_accuracy:.4f}\n'
+                    f'   - Best validation accuracy: {best_val_acc:.4f}\n'
+                    f'   - Training samples: {len(padded_sequences)}\n'
+                    f'   - Unique intents: {len(unique_tags)}\n'
+                    f'\n💾 Saved Files:\n'
+                    f'   - Model: {model_path}\n'
+                    f'   - Tokenizer: {tokenizer_path}\n'
+                    f'   - Tag mappings: {tag_mapping_path}\n'
+                    f'{"="*60}\n'
                 )
             )
 

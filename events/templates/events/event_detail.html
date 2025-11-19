@@ -39,11 +39,13 @@
             </button>
         </form>
         {% endif %}
-        <a href="{% url 'volunteer_for_event' event.id %}"
-           class="bg-[#F10034] hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full text-lg inline-block">
-            <i class="fas fa-heart mr-2"></i>
-            {% if existing_volunteer %}View & Await Approval{% else %}Apply to Volunteer{% endif %}
-        </a>
+        {% if user.is_authenticated and user != event.proposed_by %}
+            <a href="{% url 'volunteer_for_event' event.id %}"
+            class="bg-[#F10034] hover:bg-red-700 text-white font-bold py-2 px-4 rounded-full text-lg inline-block">
+                <i class="fas fa-heart mr-2"></i>
+                {% if existing_volunteer %}View & Await Approval{% else %}Apply to Volunteer{% endif %}
+            </a>
+        {% endif %}
         {% if can_access_group_chat %}
         <a href="{% url 'chat_dashboard' %}?chat_id={{ event.group_chat.id }}"
            class="bg-[#2A07F9] hover:bg-blue-700 text-white font-bold py-2 px-4 rounded-full text-lg inline-block">

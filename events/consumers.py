@@ -1,6 +1,8 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
+from django.utils import timezone
+import pytz
 from .models import GroupChat, Message, GroupChatMember
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -31,13 +33,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         message = await self.save_message(message_content)
 
+        # Convert UTC to Nepal time
+        nepal_tz = pytz.timezone('Asia/Kathmandu')
+        local_time = message.created_at.astimezone(nepal_tz)
+
         await self.channel_layer.group_send(
             self.chat_group_name,
             {
                 'type': 'chat_message',
                 'message': message_content,
                 'username': self.user.username,
-                'created_at': message.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+                'created_at': local_time.strftime('%Y-%m-%d %H:%M:%S'),  # Now in local time
             }
         )
 

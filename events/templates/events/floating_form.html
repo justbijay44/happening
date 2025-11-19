@@ -1,0 +1,55 @@
+<div class="absolute bottom-0 translate-y-1/2 z-20 w-full max-w-7xl mx-auto px-4">
+    <div class="bg-[#2A07F9] p-6 md:p-8 rounded-full shadow-2xl border border-white/30
+                flex flex-col md:flex-row items-center justify-center md:justify-between
+                text-center md:text-left gap-8 md:gap-0 text-white">
+
+        <div class="flex flex-col items-center flex-1">
+            <div class="text-5xl md:text-6xl font-extrabold tracking-tighter">
+                {{ total_events }}<span class="text-4xl md:text-5xl">+</span>
+            </div>
+            <div class="text-sm md:text-base font-medium mt-1 tracking-wide uppercase opacity-80">
+                Events
+            </div>
+        </div>
+
+        <div class="hidden md:block text-white/40 font-medium text-2xl px-8">|</div>
+
+        <div class="flex flex-col items-center flex-1">
+            {% if next_event %}
+                <div class="text-3xl md:text-1sm font-extrabold tracking-tighter">
+                    {{ next_event.title|truncatechars:18 }}
+                </div>
+                <div class="text-sm md:text-base font-medium mt-1 tracking-wide uppercase opacity-80">
+                    Earliest Upcoming
+                </div>
+            {% else %}
+                <div class="text-4xl md:text-5xl font-extrabold tracking-tighter opacity-40">
+                    —
+                </div>
+                <div class="text-sm md:text-base font-medium mt-1 tracking-wide uppercase opacity-80">
+                    No Upcoming Events
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="hidden md:block text-white/40 font-medium text-2xl px-8">|</div>
+
+        <div class="flex flex-col items-center flex-1">
+            {% if next_event and countdown %}
+                <div class="text-5xl md:text-6xl font-extrabold tracking-tighter">
+                    {{ countdown }}
+                </div>
+                <div class="text-sm md:text-base font-medium mt-1 tracking-wide uppercase opacity-80">
+                    Time Left
+                </div>
+            {% else %}
+                <div class="text-5xl md:text-6xl font-extrabold tracking-tighter opacity-40">
+                    —
+                </div>
+                <div class="text-sm md:text-base font-medium mt-1 tracking-wide uppercase opacity-80">
+                    Stay Tuned!
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>

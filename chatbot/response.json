@@ -1,6 +1,70 @@
 {
   "intents": [
     {
+      "tag": "greeting",
+      "patterns": [
+        "hello",
+        "hi",
+        "hey",
+        "good morning",
+        "good afternoon",
+        "good evening",
+        "greetings",
+        "hi there",
+        "hello there",
+        "hey there",
+        "good day",
+        "morning",
+        "afternoon",
+        "evening",
+        "howdy",
+        "sup",
+        "what's up",
+        "yo",
+        "hola",
+        "heya"
+      ],
+      "responses": [
+        "Hello! I'm HaNA, your event assistant. How can I help you today?",
+        "Hi there! I'm here to help you find information about events. What would you like to know?",
+        "Hey! I can help you with event information. Try asking about today's events, this week's schedule, or specific event details!",
+        "Good day! I'm your friendly event bot. Ask me about upcoming events, venues, or event details!"
+      ]
+    },
+    {
+      "tag": "goodbye",
+      "patterns": [
+        "bye",
+        "goodbye",
+        "see you later",
+        "see ya",
+        "farewell",
+        "catch ya later",
+        "talk to you later",
+        "ttyl",
+        "take care",
+        "see you",
+        "later",
+        "peace",
+        "i'm leaving",
+        "gotta go",
+        "exit",
+        "quit",
+        "thank you",
+        "thanks",
+        "thats all",
+        "that's all",
+        "im done",
+        "i'm done"
+      ],
+      "responses": [
+        "Goodbye! Feel free to ask me about events anytime. Have a great day!",
+        "See you later! I'll be here whenever you need event information.",
+        "Take care! Don't forget to check back for upcoming events!",
+        "Bye! Hope I was helpful with your event questions. See you soon!"
+      ]
+    },
+    {
       "tag": "event_today",
       "patterns": [
         "events today",
@@ -19,12 +83,46 @@
         "today's activities",
         "events right now",
         "current events",
-        "events now"
+        "events now",
+        "whats today",
+        "todays event",
+        "what happening today",
+        "any event today",
+        "show today events",
+        "are there any events today",
+        "do we have events today"
       ],
       "responses": [
         "Here are today's events:\n{dynamic_list}",
         "Today's events:\n{dynamic_list}",
         "Check out today's events:\n{dynamic_list}"
+      ]
+    },
+    {
+      "tag": "event_tomorrow",
+      "patterns": [ 
+        "tomorrow",
+        "events tomorrow",
+        "tomorrow's events",
+        "what's tomorrow",
+        "show me tomorrow's events",
+        "any events tomorrow",
+        "events for tomorrow",
+        "tomorrow's schedule",
+        "what's on tomorrow",
+        "tmrw events",
+        "tmr events",
+        "tomorrows event",
+        "what happening tomorrow",
+        "any event tomorrow",
+        "show tomorrow events",
+        "are there any events tomorrow",
+        "what about tomorrow"
+      ],
+      "responses": [
+        "Here are tomorrow's events:\n{dynamic_list}",
+        "Tomorrow's events:\n{dynamic_list}",
+        "Check out tomorrow's events:\n{dynamic_list}"
       ]
     },
     {
@@ -44,7 +142,13 @@
         "this week activities",
         "what's happening this week",
         "events in the next 7 days",
-        "upcoming events this week"
+        "this weeks event",
+        "whats this week",
+        "what happening this week",
+        "any event this week",
+        "are there any events this week",
+        "what about this week",
+        "show this week events"
       ],
       "responses": [
         "Events this week:\n{dynamic_list}",
@@ -56,25 +160,67 @@
       "tag": "event_upcoming_week",
       "patterns": [
         "events next week",
-        "upcoming week",
         "next week's events",
         "what's next week",
         "events for next week",
         "what's coming next week",
         "next week's schedule",
-        "upcoming events",
-        "future events",
         "next week activities",
         "show me next week",
         "events in the following week",
         "what's planned for next week",
         "next week's activities",
-        "coming week events"
+        "coming week events",
+        "next weeks event",
+        "whats next week",
+        "any event next week",
+        "following week",
+        "what about next week",
+        "upcoming week"
       ],
       "responses": [
         "Events next week:\n{dynamic_list}",
-        "Upcoming week events:\n{dynamic_list}",
-        "Next week's events:\n{dynamic_list}"
+        "Next week's events:\n{dynamic_list}",
+        "Here's what's coming next week:\n{dynamic_list}"
+      ]
+    },
+    {
+      "tag": "event_all",
+      "patterns": [
+        "all events",
+        "list all events",
+        "show all events",
+        "all upcoming events",
+        "list upcoming events",
+        "show me all events",
+        "complete event list",
+        "full event list",
+        "every event",
+        "list of all events",
+        "show everything",
+        "all available events",
+        "entire schedule",
+        "complete schedule",
+        "list of upcoming events",
+        "list upcoming",
+        "show upcoming",
+        "list all upcoming",
+        "give me list of events",
+        "can you give list of all events",
+        "available events",
+        "list available events",
+        "show available events",
+        "all the events",
+        "list events",
+        "show events",
+        "list of events",
+        "the upcoming events",
+        "upcoming events"
+      ],
+      "responses": [
+        "All upcoming events:\n{dynamic_list}",
+        "Here's the complete list of upcoming events:\n{dynamic_list}",
+        "All available events:\n{dynamic_list}"
       ]
     },
     {
@@ -99,7 +245,40 @@
         "details about",
         "more about",
         "event description",
-        "full details"
+        "full details",
+        "detail about",
+        "give detail",
+        "can you give detail",
+        "tell detail",
+        "tell me detail",
+        "what about",
+        "about this event",
+        "about that event",
+        "this event detail",
+        "that event detail",
+        "detail this",
+        "detail that",
+        "detail it",
+        "more info",
+        "tell more",
+        "when is this event",
+        "when is that event",
+        "when is it",
+        "when is the event",
+        "when is this event happening",
+        "what time is this event",
+        "what time is it",
+        "what date is this event",
+        "what date is it",
+        "date of this event",
+        "date of that event",
+        "date of the event",
+        "time of this event",
+        "time of that event",
+        "time of the event",
+        "when does it happen",
+        "when does this happen",
+        "when does that happen"
       ],
       "responses": [
         "Details for {event}:\nDate: {date}\nDescription: {description}\nVenue: {venue} (Map: {map})",
@@ -126,7 +305,17 @@
         "event address",
         "where does it take place",
         "venue location",
-        "place of event"
+        "place of event",
+        "where event",
+        "where is it",
+        "where this event",
+        "where that event",
+        "wheres venue",
+        "where venue",
+        "where is this",
+        "where is that",
+        "location of this",
+        "location of that"
       ],
       "responses": [
         "Venue for {event}: {venue} (Map: {map})",
@@ -139,13 +328,6 @@
         "help",
         "what can you do",
         "i don't understand",
-        "hello",
-        "hi",
-        "hey",
-        "greetings",
-        "good morning",
-        "good afternoon",
-        "good evening",
         "assist me",
         "how can you help",
         "what do you do",
@@ -157,12 +339,27 @@
         "support",
         "guide",
         "how to use",
-        "instructions"
+        "instructions",
+        "random text",
+        "gibberish",
+        "what",
+        "huh",
+        "confused",
+        "don't get it",
+        "makes no sense",
+        "unclear",
+        "sorry what",
+        "pardon",
+        "repeat",
+        "again",
+        "idk",
+        "dunno",
+        "not sure"
       ],
       "responses": [
-        "Hello! I'm your event assistant. I can help you with:\n\n• Events today: 'What events are today?'\n• This week's events: 'Events this week'\n• Next week's events: 'Upcoming events'\n• Event details: 'Details about [event name]'\n• Event venue: 'Where is [event name]?'\n\nJust ask me about any events!",
-        "I'm here to help! Try asking about events today, this week, next week, details, or venue.",
-        "Hi! I can help you find information about events. Ask me about today's events, this week's schedule, upcoming events, or specific event details!"
+        "I'm sorry, I didn't quite understand that. I'm your event assistant and I can help you with:\n\n Events today: 'What events are today?'\n Events tomorrow: 'Any events tomorrow?'\n This week's events: 'Events this week'\n Next week's events: 'Events next week'\n All upcoming events: 'Show all events'\n Event details: 'Details about [event name]'\n Event venue: 'Where is [event name]?'\n\nTry asking me about any events!",
+        "I didn't catch that! I'm here to help with event information. Try asking about today's events, this week's schedule, all upcoming events, or specific event details.",
+        "Sorry, I'm not sure what you mean. I specialize in helping with events! Ask me things like 'What events are today?' or 'Show me all events'."
       ]
     }
   ]

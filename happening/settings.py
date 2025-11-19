@@ -12,14 +12,14 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
 CSRF_TRUSTED_ORIGINS = [
     'https://fc42c930c779.ngrok-free.app',
-    'https://bd7eea6328fe.ngrok-free.app',
+    'https://e76e6b4c8bc1.ngrok-free.app',
 ]
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
     'fc42c930c779.ngrok-free.app',
-    'bd7eea6328fe.ngrok-free.app',
+    'e76e6b4c8bc1.ngrok-free.app',
 ]
 
 
@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'events',
     'users',
     'chatbot',
+    'decision_tree',
 ]
 
 TAILWIND_APP_NAME = 'theme'
@@ -167,16 +168,18 @@ MEDIA_ROOT = BASE_DIR / 'media'  # or set to an absolute path
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# LOGGING = {
-#     'version': 1,
-#     'disable_existing_loggers': False,
-#     'handlers': {
-#         'console': {
-#             'class': 'logging.StreamHandler',
-#         },
-#     },
-#     'root': {
-#         'handlers': ['console'],
-#         'level': 'DEBUG',
-#     },
-# }
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        '': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        },
+    },
+}

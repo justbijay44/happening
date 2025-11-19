@@ -101,11 +101,11 @@ def allocate_venue(event):
             event.save(update_fields=['venue'])
         return False
 
+# to store previous values in temproray attribute
+# to detect changes in post save
 @receiver(pre_save, sender=Event)
 def store_previous_state(sender, instance, **kwargs):
-    """
-    Store previous values to detect changes in expected_attendees, date, end_date, or venue.
-    """
+
     if instance.pk:
         try:
             previous = Event.objects.get(pk=instance.pk)
@@ -127,6 +127,8 @@ def store_previous_state(sender, instance, **kwargs):
         instance._previous_status = None
         instance._previous_venue = None
 
+# to allocate automactically if superuser create event
+# to detect changes and allocate venue accordingly
 @receiver(post_save, sender=Event)
 def allocate_venue_on_approval_or_update(sender, instance, created, **kwargs):
     """
